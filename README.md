@@ -1,5 +1,7 @@
 # skill-server-imirror
 
+Ran out of time for markdown editing
+
 ##Basic Setup of Raspberry Pi from fresh install for Mirror and Webserver:
 
 
