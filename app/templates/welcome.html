@@ -1,0 +1,26 @@
+{% extends "blank.html" %}
+{% block content %}
+    <div class="fader" id="mainBox">
+    {{welcome_message}}
+    </div>
+	
+    <script>
+      $(document).ready(function(){
+        $("#mainBox").delay(1500).fadeIn("slow");
+        $("#AlexaBox").delay(6000).fadeIn("slow").delay(3000).fadeOut("slow");
+        $("#Options").delay(10500).fadeIn("slow").delay(5000).fadeOut("slow");
+	$("#mainBox").delay(16000).fadeOut("slow");
+     });
+    </script>
+
+
+    <div class="fader" id="AlexaBox">
+    If you want to talk with me, say "Alexa, ..."
+
+    </div>
+
+    <div class="fader" id="Options">
+    If you want to see your options, say 'Alexa, open the menu'
+    </div>
+    {% endblock %}
+
