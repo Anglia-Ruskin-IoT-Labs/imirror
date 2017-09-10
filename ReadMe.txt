@@ -37,17 +37,18 @@ To remove black borders on screen
 in /boot/config.txt uncomment disable_overscan=1
 
 To Disable XSession from Blanking
-Look tor this Line in /etc/lightdm/lightdm.conf
+Install xscreensaver:
+```bash
+sudo apt-get update
+sudo apt-get install xscreensaver
+```
+Once installed open the Pi's preferences and change screensaver preferences to disable screenblanking.
 
-'xserver-command=X'
-
-uncomment and change it to  'xserver-command=X -s 0 dpms'
-
-Downloaded a Black Black theme for chrome (chromium kiosk chrome white screen when changing pages)
+Download a Black theme for chrome (chromium kiosk chrome white screen when changing pages)
 
 ===================================================================================
 
-To Install iMirror: follow its readme.
+To Install [iMirror](https://github.com/Druanae/iMirror): follow its readme.
 
 To install the webserver:
 
