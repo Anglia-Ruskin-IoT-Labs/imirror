@@ -45,8 +45,8 @@ in /boot/config.txt uncomment
 disable_overscan=1
 ```
 
-Disable XSession from Blanking
-Install xscreensaver:
+Disable XSession from Blanking  
+Install xscreensaver:  
 ```bash
 sudo apt-get update
 sudo apt-get install xscreensaver
