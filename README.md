@@ -45,16 +45,19 @@ in /boot/config.txt uncomment
 disable_overscan=1
 ```
 
-Change and uncomment this line in this file: /etc/lightdm/lightdm.conf
+Disable XSession from Blanking
+Install xscreensaver:
 ```bash
-xserver-command=X -s 0 dpms
+sudo apt-get update
+sudo apt-get install xscreensaver
 ```
+Once installed open the Pi's preferences and change screensaver preferences to disable screenblanking.
 
-Downloaded a Black Black theme for chrome (chromium kiosk chrome white screen when changing pages)
+Download a Black theme for chrome (chromium kiosk chrome white screen when changing pages)
 
 ## Installation requirements
 
-To Install iMirror: follow its readme.
+To Install [iMirror](https://github.com/Druanae/iMirror): follow its readme.
 
 To install the webserver:
 
