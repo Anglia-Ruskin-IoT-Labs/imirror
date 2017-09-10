@@ -36,9 +36,12 @@ SSH+VNC (optional for remote control)
 To remove black borders on screen
 in /boot/config.txt uncomment disable_overscan=1
 
-Change and uncomment this line in this file: /etc/lightdm/lightdm.conf
-'xserver-command=X -s 0 dpms'
+To Disable XSession from Blanking
+Look tor this Line in /etc/lightdm/lightdm.conf
 
+'xserver-command=X'
+
+uncomment and change it to  'xserver-command=X -s 0 dpms'
 
 Downloaded a Black Black theme for chrome (chromium kiosk chrome white screen when changing pages)
 
@@ -82,7 +85,6 @@ Add these lines to /etc/xdg/lxsession/LXDE/autostart to run things at startup
 @lxterminal -e $HOME/ngrok http 5005 & 	#lxterminal preferred over bash for debugging
 @lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
 @lxterminal -e /home/pi/SkillServer/PIRBoot.py #Motion sensor script
-@lxterminal -e /home/pi/SkillServer/ngrok http 5005
 #for black empty screen
 @chromium-browser --incognito --kiosk http://localhost:5005/
 

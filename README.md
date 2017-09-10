@@ -85,7 +85,7 @@ Add these lines to /etc/xdg/lxsession/LXDE/autostart to run things at startup
 @lxterminal -e $HOME/ngrok http 5005 & 	#lxterminal preferred over bash for debugging
 @lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
 @lxterminal -e /home/pi/SkillServer/PIRBoot.py #Motion sensor script
-@lxterminal -e /home/pi/SkillServer/ngrok http 5005
+@lxterminal -e /home/pi/ngrok http 5005
 #for black empty screen
 @chromium-browser --incognito --kiosk http://localhost:5005/
 
@@ -96,14 +96,20 @@ Skill Server Configuration (guide in progress):
 
 Log In to Your Alexa Development portal, create new skill in UK or US (where you will use it)
 
-Progress as usual, In Configuration choose HTTPS, give the ngrok address like this: 
-	https://<NGROK_ADDRESS>/alexa-skill
+Fill in name, description, 
+In Configuration tabchoose HTTPS, give the ngrok address like this: 
+	https://<NGROK_ADDRESS>/alexa_menu
 
 Choose option "it has a wildcard certificate"
 
 Intents and slots in skill:
 
-########################
+Dashboard
+Map
+	slot name: roomNumber type: AMAZON.NUMBER
+OpenGame
+Zork
+
 
 
 
