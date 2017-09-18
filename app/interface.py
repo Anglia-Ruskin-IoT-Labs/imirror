@@ -408,6 +408,7 @@ class BuildGUI(threading.Thread):
         self.bottom_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=tk.YES)
         self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=tk.YES)
+        self.root.attributes("-fullscreen", True)
         self.state = False
 
         # Return toggles between fullscreen modes. Escape exits fullscreen
@@ -430,8 +431,9 @@ class BuildGUI(threading.Thread):
         self.news.pack(side=tk.RIGHT, anchor=tk.S, padx=50, pady=50)
         self.news.headlines_label.config(justify=tk.RIGHT)
         
-        
+        self.toggle_gui()
         self.root.mainloop()
+        
         
     def toggle_fullscreen(self, event=None):
         """

@@ -53,7 +53,9 @@ def start_skill():
     welcome_message = 'This is the menu, plesase choose one app to try out. To open them, just say their names. To exit, just say goodbye.'
     SaveAnswer(welcome_message)
     countdown.RestartTimer()
-    webbrowser.open('http://0.0.0.0:5005/menu', new=0) #open interface - only menu
+    #webbrowser.open('http://0.0.0.0:5005/menu', new=0) #open interface - only menu
+    gui.toggle_gui()
+    #gui.toggle_menu() not yet implemented
     return question(welcome_message) \
     .reprompt("I didn't get that. Which app you'd like to choose?")
 
@@ -64,6 +66,7 @@ def opening_play():
     #Implementation not set yet - Where the skillserver will run; where the script will run
     countdown.RestartTimer()
     SaveAnswer(Insturctions)
+    gui.toggle_gui()
     return statement(instructions)
 
 @ask.intent("Zork")
@@ -80,6 +83,7 @@ def dashboard():
     #open interface.py all modules except menu
     countdown.RestartTimer()
     SaveAnswer(text)
+    gui.toggle_all()
     return statement(text)
 
 @ask.intent("Map", convert={'roomNumber': int}) #Testing flask-ask capability - unnecessary

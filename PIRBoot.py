@@ -30,7 +30,7 @@ try:
                 if GPIO.input(PIR_PIN) and countdown.ReadTimer() <= 0:
                         countdown.RestartTimer()
                         #Alexa stop
-                        webbrowser.open('http://0.0.0.0:5005/welcome', new=0, autoraise=True) #
+                        #webbrowser.open('http://0.0.0.0:5005/welcome', new=0, autoraise=True) #
                         time.sleep(1)
                         #alexa welcome audio line?                            
                 elif GPIO.input(PIR_PIN):
@@ -38,7 +38,7 @@ try:
                         time.sleep(1)                        
                 else:
                         if countdown.ReadTimer() == 0:
-                                webbrowser.open('http://0.0.0.0:5005/', new=0, autoraise=True) #black screen
+                                #webbrowser.open('http://0.0.0.0:5005/', new=0, autoraise=True) #black screen
                                 #stop alexa session
                         countdown.DecrementTimer()
                         time.sleep(1)
