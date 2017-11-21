@@ -393,6 +393,7 @@ class BuildGUI(threading.Thread):
     """
     def __init__(self):
         threading.Thread.__init__(self)
+        self.daemon = True
         self.start()
         
     def callback(self):
@@ -455,9 +456,12 @@ class BuildGUI(threading.Thread):
         return "break"
     
     def toggle_gui(self, event=None):
-        self.left_frame.pack_forget()
-        self.bottom_frame.pack_forget()
-        self.right_frame.pack_forget()
+        if self.left_frame is not None:
+            self.left_frame.pack_forget()
+        if self.bottom_frame is not None:
+            self.bottom_frame.pack_forget()
+        if self.right_frame is not None:
+            self.right_frame.pack_forget()
         return "break"
     
     def toggle_weather(self, event=None):

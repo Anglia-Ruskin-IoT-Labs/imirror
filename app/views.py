@@ -9,13 +9,25 @@ import unidecode
 import webbrowser
 import timer as countdown
 import interface
+import PIRBoot
+import threading
 
-
+#Interface Control method
+def ChangeInterface(str):
+    if (str == "show"):
+        gui.toggle_all()
+    elif (str == "hide"):
+        gui.toggle_gui()
 
 ask = Ask(app, "/alexa_menu")
 gui = interface.BuildGUI()
+motionSensor = PIRBoot.SensorService(ChangeInterface)
+
 speech = {'response': ""} #string stores the skill responses
 
+
+
+        
 #Save alexa responses - function saves a little time
 def SaveAnswer(text):
     speech['response'] = text
