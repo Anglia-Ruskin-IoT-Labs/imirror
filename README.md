@@ -96,7 +96,7 @@ GPIO 7 [Pin 26]
 
 Download Webserver files from here to $HOME/SkillServer
 
-Add these lines to /etc/xdg/lxsession/LXDE/autostart to run things at startup
+Add these lines to ~/lxsession/LXDE/autostart to run things at startup
 ```bash
 @lxterminal -e /home/pi/ngrok http 5005 & 	#lxterminal preferred over bash for debugging
 @lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
