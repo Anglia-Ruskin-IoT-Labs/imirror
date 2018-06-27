@@ -1,5 +1,10 @@
 # skill-server-imirror
 
+It displays weather, news and time, and also displays amazon alexa textfielfds
+ from cards accepting the payload from an endpoint.
+
+Motion sensor is implemented.
+
 
 ## Basic Setup of Raspberry Pi from fresh install for iMirror and its server:
 
@@ -23,7 +28,7 @@ disable_overscan=1
 
 Disable XSession from Blanking  
 ```bash
-NOT WORKING ANYMORE
+In theory this is not needed anymore, but its also not working.
 ```
 Once installed open the Pi's preferences and change screensaver preferences to disable screenblanking.
 
@@ -61,7 +66,13 @@ Edit **interface.py** and replace the contents of LOCATION_API_TOKEN with the se
 WEATHER_API_TOKEN = '[TOKEN]' # replace with secret key provided at https://darksky.net/dev/account/
 ```
 
-Motion sensor PIN setup
+## Set up autostart
+Add these lines to ~/.config/lxsession/LXDE/autostart to run things at startup
+```bash
+@lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
+```
+
+Put the motion sensor in the correct PINs
 ```
 PIR SENSOR
 GPIO GND [Pin 6]
@@ -69,11 +80,9 @@ GPIO 5V [Pin 2]
 GPIO 7 [Pin 26]
 ```
 
-#Installation
+#Running
+Just restart and it will work
 
-Add these lines to ~/.config/lxsession/LXDE/autostart to run things at startup
-```bash
-@lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
-```
+
 
 
