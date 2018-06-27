@@ -1,43 +1,19 @@
 # skill-server-imirror
 
 
-## Basic Setup of Raspberry Pi from fresh install for Mirror and Webserver:
+## Basic Setup of Raspberry Pi from fresh install for iMirror and its server:
 
 
-eduroam internet access on raspberry-pi (for Anglia Ruskin Students):
-(additional install scripts available on https://cat.eduroam.org/)
-
-Add lines below to this file: /etc/wpa_supplicant/wpa_supplicant.conf 
-replace username and password with yours
-  
-
-```bash
-network={
-  ssid="eduroam"
-  key_mgmt=WPA-EAP
-  pairwise=CCMP
-  group=CCMP TKIP
-  eap=PEAP
-  ca_cert="/etc/wpa_supplicant/ca.pem"
-  identity="<YOUR_USERNAME>@student.anglia.ac.uk"
-  domain_suffix_match="anglia-ruskin-secure-wifi.anglia.ac.uk"
-  phase2="auth=MSCHAPV2"
-  password="<YOUR PASSWORD>"
-}
-```
-
->ADD ca.pem file to the same folder<
-
----------------------------------------------------------------------------------
+Required: 
+* Internet access
 
 ```bash
 sudo raspi-config
 ```
-Turn On these: 
+Turn these on in raspi-config: 
 
 * Wait for network on boot
-* force audio output throught 3.5 jack
-* SSH+VNC (optional for remote control)
+* Optional: VNC
 
 To remove black borders on screen
 in /boot/config.txt uncomment 
@@ -46,43 +22,44 @@ disable_overscan=1
 ```
 
 Disable XSession from Blanking  
-Install xscreensaver:  
 ```bash
-sudo apt-get update
-sudo apt-get install xscreensaver
+NOT WORKING ANYMORE
 ```
 Once installed open the Pi's preferences and change screensaver preferences to disable screenblanking.
 
-Download a Black theme for chrome (chromium kiosk chrome white screen when changing pages)
-
 ## Installation requirements
 
-To Install [iMirror](https://github.com/Druanae/iMirror): follow its readme.
-
-To install the webserver:
-
-prevent Flask-ask (cryptography) Compiling errors:
+Clone the repo:
+```bash
+cd /home/pi && git clone https://github.com/Floyd0122/skill-server-imirror.git
+```
+prevent any Compiling errors:
 ```bash
 sudo apt-get install build-essential libssl-dev libffi-dev python-dev
 ```
+install required packages:
+```bash
+sudo apt-get install python python-imaging-tk
+```
+
 
 Install script dependencies:
 
+due to some pip errors recently we're usng explicit install (20/07/18)
+
 ```bash
-sudo apt-get install python-flask
-sudo pip install flask-ask
-sudo pip install unidecode
+cd skill-server-imirror && sudo python -m pip install -r requirements.txt
 ```
 
-Download ngrok:
-```bash
-wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm.zip
-```
-Unzip to $HOME.
+## Get API keys:
+Go to [IpStack](https://ipstack.com/signup/free) and sign up for a free account.
+Go to [darksky.net](https://darksky.net/dev/) and sign up for a developer account. 
 
-* To link ngrok acc with this script install authtoken.
-* Register on website and follow instructions
-* https://dashboard.ngrok.com/user/login
+Edit **interface.py** and replace the contents of WEATHER_API_TOKEN with the secret key provided on [Darksky's account page](https://darksky.net/dev/account/).
+Edit **interface.py** and replace the contents of LOCATION_API_TOKEN with the secret key provided on [IpStack's account page](https://ipstack.com/quickstart/).
+```python
+WEATHER_API_TOKEN = '[TOKEN]' # replace with secret key provided at https://darksky.net/dev/account/
+```
 
 Motion sensor PIN setup
 ```
@@ -94,38 +71,9 @@ GPIO 7 [Pin 26]
 
 #Installation
 
-Download Webserver files from here to $HOME/SkillServer
-
-Add these lines to ~/lxsession/LXDE/autostart to run things at startup
+Add these lines to ~/.config/lxsession/LXDE/autostart to run things at startup
 ```bash
-@lxterminal -e /home/pi/ngrok http 5005 & 	#lxterminal preferred over bash for debugging
 @lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
-@lxterminal -e /home/pi/SkillServer/PIRBoot.py #Motion sensor script
-@lxterminal -e /home/pi/ngrok http 5005
-#for black empty screen
-@chromium-browser --incognito --kiosk http://localhost:5005/
 ```
 
 
-## Alexa Skill setup
-Skill Server Configuration (guide in progress):
-
-Log In to Your Alexa Development portal, create new skill in UK or US (where you will use it)
-
-Fill in name, description, 
-In Configuration tabchoose HTTPS, give the ngrok address like this: 
-	https://<NGROK_ADDRESS>/alexa_menu
-    
-> Every time you run NGROK it gives you a new address!!!
-
-Choose option "it has a wildcard certificate"
-
-Intents and slots in skill:
-
-```
-Dashboard
-Map
-	slot name: roomNumber type: AMAZON.NUMBER
-OpenGame
-Zork
-```
