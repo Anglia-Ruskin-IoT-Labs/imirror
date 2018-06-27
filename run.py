@@ -1,3 +1,3 @@
 #!/usr/bin/python
-from app import app
-app.run(host='0.0.0.0', port=5005)
+from app import server
+server.run(host='0.0.0.0', port=5005)

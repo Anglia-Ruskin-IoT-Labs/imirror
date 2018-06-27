@@ -28,8 +28,7 @@ class SensorService(threading.Thread):
                 if GPIO.input(PIR_PIN) and countdown.ReadTimer() <= 0:
                     countdown.RestartTimer()
                     self.parent_method("show")
-                    time.sleep(1)
-                    #alexa welcome audio line?                            
+                    time.sleep(1)                           
                 elif GPIO.input(PIR_PIN):
                     countdown.RestartTimer()
                     time.sleep(1)
@@ -44,7 +43,6 @@ class SensorService(threading.Thread):
                     time.sleep(1)
                 else:                  
                     time.sleep(1)
-                        #stop alexa session
                 
         except KeyboardInterrupt:
             print'Quit'

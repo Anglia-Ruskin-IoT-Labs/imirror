@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 """
 SmartMirror.py
 A python program to output data for use with a smartmirror.
@@ -26,26 +26,28 @@ except ImportError:
 ### Darksky API weather constants ###
 # replace with secret key provided at https://darksky.net/dev/account/
 WEATHER_API_TOKEN = '443a029b56964c639cb8f6da87415c20'
+### IpStack Location API token
+LOCATION_API_TOKEN = '66c1f2e2627bb5299404ddfbe5ff5185'
 # For full lust of language and unit paramaeters see:
 # https://darksky.net/dev/docs/forecast
 WEATHER_LANG = 'en'
 WEATHER_UNIT = 'uk2'
-ICON_DIR = "/home/pi/SkillServer/app/"
+ICON_DIR = "app/icons/"
 # maps
 ICON_LOOKUP = {
-    'clear-day': ICON_DIR + "icons/sun.png",  # Clear Sky
-    'wind': ICON_DIR + "icons/wind.png",  # Wind
-    'cloudy': ICON_DIR + "icons/cloud.png",  # Cloudy day
-    'partly-cloudy-day': ICON_DIR + "icons/sun-cloud.png",  # Partial clouds
-    'rain': ICON_DIR + "icons/rain.png",  # Rain
-    'snow': ICON_DIR + "icons/snow.png",  # Snow
-    'snow-thin': ICON_DIR + "icons/snow.png",  # Sleet
-    'fog': ICON_DIR + "icons/fog.png",  # Fog
-    'clear-night': ICON_DIR + "icons/moon.png",  # Clear night
-    'partly-cloudy-night': ICON_DIR + "icons/moon-cloud.png",  # Partial clouds night
-    'thunderstorm': ICON_DIR + "icons/lightning.png",  # Storm
-    'tornado': ICON_DIR + "icons/tornado.png",  # tornado
-    'hail': ICON_DIR + "icons/hail.png"  # hail
+    'clear-day': ICON_DIR + "sun.png",  # Clear Sky
+    'wind': ICON_DIR + "wind.png",  # Wind
+    'cloudy': ICON_DIR + "cloud.png",  # Cloudy day
+    'partly-cloudy-day': ICON_DIR + "sun-cloud.png",  # Partial clouds
+    'rain': ICON_DIR + "rain.png",  # Rain
+    'snow': ICON_DIR + "snow.png",  # Snow
+    'snow-thin': ICON_DIR + "snow.png",  # Sleet
+    'fog': ICON_DIR + "fog.png",  # Fog
+    'clear-night': ICON_DIR + "moon.png",  # Clear night
+    'partly-cloudy-night': ICON_DIR + "moon-cloud.png",  # Partial clouds night
+    'thunderstorm': ICON_DIR + "lightning.png",  # Storm
+    'tornado': ICON_DIR + "tornado.png",  # tornado
+    'hail': ICON_DIR + "hail.png"  # hail
 }
 ### Locale and time constants ###
 LOCALE_LOCK = Lock()
@@ -140,7 +142,8 @@ class Weather(tk.Frame):
         try:
             ### Fetch location using freegeoip API ###
             # store location URL. Uses IP fetched by get_ip() in variable
-            location_req_url = "http://freegeoip.net/json/%s" % self.get_ip()
+            location_req_url = ("http://api.ipstack.com/" + str(self.get_ip()) +
+                                "?access_key=" + LOCATION_API_TOKEN + "&output=json&legacy=1")
             # fetch data from URL in location_req_url and store in variable
             req = get(location_req_url)
             # convert fetched data to python object and store in variable
