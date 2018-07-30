@@ -28,7 +28,7 @@ disable_overscan=1
 
 Disable XSession from Blanking  
 ```bash
-In theory this is not needed anymore, but its also not working.
+sudo apt-get install xscreensaver
 ```
 Once installed open the Pi's preferences and change screensaver preferences to disable screenblanking.
 
