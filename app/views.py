@@ -2,20 +2,20 @@ from app import server
 from flask import jsonify, request
 import json
 import requests
-import time
+from datetime import datetime
 import timer as countdown
 import interface
 import PIRBoot
 
-#Interface Control method
-def ChangeInterface(str):
+#GUI Control Interface
+def ChangeGUI(str):
     if (str == "show"):
-        gui.toggle_all()
+        gui.ToggleAll()
     elif (str == "hide"):
-        gui.toggle_gui()
+        gui.GuiOff()
 
 gui = interface.BuildGUI()
-motionSensor = PIRBoot.SensorService(ChangeInterface)
+motionSensor = PIRBoot.SensorService(ChangeGUI)
 
 
 
@@ -26,7 +26,8 @@ motionSensor = PIRBoot.SensorService(ChangeInterface)
 def blank():
     return "Hello"
 
-@server.route('/alexa', methods = ['PUT'])
+@server.route('/alexa', methods = ['POST'])
 def alexaResponse():
     json = request.get_json()
+    gui.UpdateAlexa(json["title"], json["text"], datetime.now())
     return jsonify({'response' : 'Update Ok'}) #to use with Dict
