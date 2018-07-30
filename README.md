@@ -40,7 +40,7 @@ cd /home/pi && git clone https://github.com/Floyd0122/skill-server-imirror.git
 ```
 prevent any Compiling errors:
 ```bash
-sudo apt-get install build-essential libssl-dev libffi-dev python-dev
+sudo apt-get install build-essential libssl-dev libffi-dev python-dev libglib2.0-dev
 ```
 install required packages:
 ```bash
