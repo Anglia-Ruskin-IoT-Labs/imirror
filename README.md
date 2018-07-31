@@ -28,7 +28,7 @@ disable_overscan=1
 
 Disable XSession from Blanking  
 ```bash
-In theory this is not needed anymore, but its also not working.
+sudo apt-get install xscreensaver
 ```
 Once installed open the Pi's preferences and change screensaver preferences to disable screenblanking.
 
@@ -40,7 +40,7 @@ cd /home/pi && git clone https://github.com/Floyd0122/skill-server-imirror.git
 ```
 prevent any Compiling errors:
 ```bash
-sudo apt-get install build-essential libssl-dev libffi-dev python-dev
+sudo apt-get install build-essential libssl-dev libffi-dev python-dev libglib2.0-dev
 ```
 install required packages:
 ```bash
