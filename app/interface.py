@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from threading import Lock
 import locale
 import threading
+#from app.tbscan import getThunderboards
 
 from contextlib import contextmanager
 from requests import get
@@ -386,25 +387,40 @@ class News(tk.Frame):
 
 		self.after(300000, self.get_news)
 		
-class ThunderBirdSensors(tk.Frame):
+class ThunderBoardSensor(tk.Frame):
 	""" Displays all sensors reading on the thunderbird
 	"""	
 	
 	def __init__(self, parent):
 		'''Constructor'''
-		tk.Frame._init__(self, parent, bg='black')
-		self.title = 'Thunderbird sensors'
+			
+		tk.Frame.__init__(self, parent, bg='black')
+		self.title = 'Thunderboard sensors'
 		self.title_label = tk.Label(self, text=self.title, \
 									font=('Lato', MD_TEXT), \
 								    fg='white', bg='black')
-		self.title_label.pack(side=tk.TOP, anchor=tk.W)
-		self.readings_label = tk.Label(self, text = "This is a test",
+		self.title_label.pack(side=tk.TOP, anchor=tk.E)
+		self.readings_label = tk.Label(self, text = "Thunderboard not available",
 								   font=('Lato', XS_TEXT),
 								   fg='white', bg='black', wraplength = 500, justify = tk.LEFT)
-		self.UpdateReadings()
-		
-		def UpdateReadings(self):
-			pass
+		self.readings_label.pack(side=tk.TOP, anchor=tk.E)
+		self.deviceID = -1
+								  
+	
+	def UpdateReadings(self, data):
+		message = (str(data["info"]) + "\n" + 
+					"Temperature: " + str(data["temperature"]) + "\n" + 
+					"Humidity: " + str(data["humidity"]) + "\n" + 
+					"Ambient Light: " + str(data["ambientLight"]) + "\n" + 
+					"UV index: " + str(data["uvIndex"]) + "\n" + 
+					"CO2 level: " + str(data["co2"]) + "\n" + 
+					"VOC level: " + str(data["voc"]) + "\n" + 
+					"Sound level: " + str(data["sound"]) + "\n" + 
+					"Pressure: " + str(data["pressure"]) + "\n")
+		self.readings_label.config(text=message)	
+			
+			
+
 class Alexa(tk.Frame):
 	""" Prints the sent textfields what are passed in.
 	"""
@@ -483,6 +499,7 @@ class BuildGUI(threading.Thread):
 		self.right_frame = tk.Frame(self.root, background='black')
 		self.bottom_frame = tk.Frame(self.root, background='black')
 		self.bottomRight_frame = tk.Frame(self.root, background='black')
+		self.rightMiddle_frame = tk.Frame(self.root, background='black')
 
 		# Creating the grid
 		self.root.grid_rowconfigure(1, weight=1)
@@ -498,6 +515,7 @@ class BuildGUI(threading.Thread):
 		self.root.bind("3", self.ToggleClock)
 		self.root.bind("1", self.ToggleNews)
 		self.root.bind("4", self.ToggleAlexa)
+		self.root.bind("5", self.ToggleThunderBoard)
 		self.root.bind("<Escape>", self.ToggleAll)
 		
 		
@@ -510,12 +528,16 @@ class BuildGUI(threading.Thread):
 		self.weather.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
 		# news
 		self.news = News(self.bottom_frame)
-		self.news.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		self.news.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.YES)
 		self.news.headlines_label.config(justify=tk.RIGHT)
 		# alexa
 		self.alexa = Alexa(self.bottomRight_frame)
 		self.alexa.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
 		self.alexa.alexa_label.config(justify=tk.RIGHT)
+		# thunderboard
+		self.thunderboard = ThunderBoardSensor(self.rightMiddle_frame)
+		self.thunderboard.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		self.thunderboard.readings_label.config(justify=tk.RIGHT)
 		
 		# Gui is disabled by Default
 		self.GuiOff()
@@ -555,6 +577,8 @@ class BuildGUI(threading.Thread):
 			self.right_frame.grid_forget()
 		if self.bottomRight_frame is not None:
 			self.bottomRight_frame.grid_forget()
+		if self.rightMiddle_frame is not None:
+			self.rightMiddle_frame.grid_forget()
 		return "break"
 	
 	def ToggleWeather(self, event=None):
@@ -580,6 +604,14 @@ class BuildGUI(threading.Thread):
 		'''
 		self.bottomRight_frame.grid(row=2, column = 0, sticky="sw")
 	
+	def ToggleThunderBoard(self, event=None):
+		''' Turns Thunderboard frame on
+		'''
+		if self.bottom_frame is not None:
+			self.bottom_frame.grid_forget()
+		self.rightMiddle_frame.grid(row=2, column = 1, columnspan = 2, sticky="e")
+		
+	
 	def ToggleAll(self, event=None):
 		''' Turns all Frames on
 		'''
@@ -587,6 +619,7 @@ class BuildGUI(threading.Thread):
 		self.ToggleClock()
 		self.ToggleWeather()
 		self.ToggleAlexa()
+		self.ToggleThunderBoard()
 		return "break"
 	
 		
@@ -595,6 +628,10 @@ class BuildGUI(threading.Thread):
 		'''
 		self.ToggleAlexa()
 		self.alexa.GetText(_title, _text, _time)
+		
+	def UpdateThunderboard(self, _data):
+		self.ToggleThunderBoard()
+		self.thunderboard.UpdateReadings(_data)
 		
 
 # Start the program.

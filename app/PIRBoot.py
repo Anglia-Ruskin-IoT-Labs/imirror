@@ -27,7 +27,7 @@ class SensorService(threading.Thread):
             while True:
                 if GPIO.input(PIR_PIN) and countdown.ReadTimer() <= 0:
                     countdown.RestartTimer()
-                    self.parent_method("show")
+                    self.parent_method("showAll", "")
                     time.sleep(1)                           
                 elif GPIO.input(PIR_PIN):
                     countdown.RestartTimer()
@@ -37,7 +37,7 @@ class SensorService(threading.Thread):
                     print(countdown.ReadTimer())
                     time.sleep(1)
                 elif countdown.ReadTimer() == 1:
-                    self.parent_method("hide")
+                    self.parent_method("hideAll", "")
                     print("TimeOut")
                     countdown.DecrementTimer()
                     time.sleep(1)

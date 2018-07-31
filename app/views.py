@@ -6,16 +6,20 @@ from datetime import datetime
 import timer as countdown
 import interface
 import PIRBoot
+from tbscan import ThunderboardHandler
 
-#GUI Control Interface
-def ChangeGUI(str):
-    if (str == "show"):
+#GUI_Control:Interface
+def ChangeGUI(command, data):
+    if (command == "showAll"):
         gui.ToggleAll()
-    elif (str == "hide"):
+    elif (command == "hideAll"):
         gui.GuiOff()
+    elif (command == "updateBoard"):
+		gui.UpdateThunderboard(data)
 
 gui = interface.BuildGUI()
 motionSensor = PIRBoot.SensorService(ChangeGUI)
+thunderboard = ThunderboardHandler(ChangeGUI)
 
 
 
