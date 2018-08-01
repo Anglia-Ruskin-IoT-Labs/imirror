@@ -8,6 +8,7 @@ It fetches weather, news, and time information.
 from traceback import print_exc
 from json import loads
 from time import strftime
+import time
 from datetime import datetime, timedelta
 from threading import Lock
 import locale
@@ -404,7 +405,7 @@ class ThunderBoardSensor(tk.Frame):
 								   font=('Lato', XS_TEXT),
 								   fg='white', bg='black', wraplength = 500, justify = tk.LEFT)
 		self.readings_label.pack(side=tk.TOP, anchor=tk.E)
-		self.deviceID = -1
+
 								  
 	
 	def UpdateReadings(self, data):
@@ -428,12 +429,12 @@ class Alexa(tk.Frame):
 	def __init__(self, parent):
 		""" Constructor """
 		tk.Frame.__init__(self, parent, bg='black')
-		self.title = 'Alexa'
+		self.title = ''
 		self.alexa_label = tk.Label(self, text=self.title, \
 								   font=('Lato', MD_TEXT), \
 								   fg='white', bg='black')
 		self.alexa_label.pack(side=tk.TOP, anchor=tk.W)
-		self.text_label = tk.Label(self, text = "This is a test",
+		self.text_label = tk.Label(self, text = "",
 								   font=('Lato', SM_TEXT),
 								   fg='white', bg='black', wraplength = 500, justify = tk.LEFT)
 		self.text_label.pack(side=tk.TOP, anchor=tk.N)
@@ -464,6 +465,29 @@ class Alexa(tk.Frame):
 		except AttributeError:
 			self.loop = self.after(5000, self.IsTextOld)
 			pass
+			
+class PopUp(tk.Frame):
+	''' Label that destroys itself after 5 seconds
+	'''
+	
+	def __init__(self, parent):
+		tk.Frame.__init__(self, parent, bg='black')
+		self.title = 'Notification'
+		self.alexa_label = tk.Label(self, text=self.title, \
+								   font=('Lato', MD_TEXT), \
+								   fg='white', bg='black')
+		self.alexa_label.pack(side=tk.TOP, anchor=tk.N)
+		self.text_label = tk.Label(self, text = '',
+								   font=('Lato', SM_TEXT),
+								   fg='white', bg='black')
+		self.text_label.pack(side=tk.TOP, anchor=tk.N)
+		
+		
+		
+		
+	def UpdateText(self, _text):
+		self.text_label.config(text = _text)
+		
 
 		
 
@@ -495,18 +519,44 @@ class BuildGUI(threading.Thread):
 		self.state = False
 		
 		# Creating frames
-		self.left_frame = tk.Frame(self.root, background='black')
-		self.right_frame = tk.Frame(self.root, background='black')
-		self.bottom_frame = tk.Frame(self.root, background='black')
-		self.bottomRight_frame = tk.Frame(self.root, background='black')
-		self.rightMiddle_frame = tk.Frame(self.root, background='black')
+		self.weather_parent = tk.Frame(self.root, background='black')
+		self.clock_parent = tk.Frame(self.root, background='black')
+		self.news_parent = tk.Frame(self.root, background='black')
+		self.alexa_parent = tk.Frame(self.root, background='black')
+		self.thunderboard_parent = tk.Frame(self.root, background='black')
+		self.overlay_frame = tk.Frame(self.root, background='black')
 
 		# Creating the grid
 		self.root.grid_rowconfigure(1, weight=1)
 		self.root.grid_columnconfigure(1, weight=1)
 	
 		
+		
+		
+		## Putting the modules into their objects
+		# clock
+		self.clock = Clock(self.clock_parent)
+		self.clock.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		# weather
+		self.weather = Weather(self.weather_parent)
+		self.weather.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		# news
+		self.news = News(self.news_parent)
+		self.news.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.YES)
+		self.news.headlines_label.config(justify=tk.RIGHT)
+		# alexa
+		self.alexa = Alexa(self.alexa_parent)
+		self.alexa.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		self.alexa.alexa_label.config(justify=tk.RIGHT)
+		# thunderboard
+		self.thunderboard = ThunderBoardSensor(self.thunderboard_parent)
+		self.thunderboard.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		self.thunderboard.readings_label.config(justify=tk.RIGHT)
 
+		# popup
+		self.notif = PopUp(self.overlay_frame)
+		self.notif.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		
 		# Toggles between fot testing
 		self.root.bind("<Return>", self.toggle_fullscreen)
 		self.root.bind("<Escape>", self.end_fullscreen)
@@ -514,36 +564,24 @@ class BuildGUI(threading.Thread):
 		self.root.bind("2", self.ToggleWeather)
 		self.root.bind("3", self.ToggleClock)
 		self.root.bind("1", self.ToggleNews)
-		self.root.bind("4", self.ToggleAlexa)
+		#self.root.bind("4", self.ToggleAlexa)
 		self.root.bind("5", self.ToggleThunderBoard)
+		self.root.bind("6", self.SendNotification)
 		self.root.bind("<Escape>", self.ToggleAll)
-		
-		
-		## Putting the modules into their objects
-		# clock
-		self.clock = Clock(self.right_frame)
-		self.clock.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
-		# weather
-		self.weather = Weather(self.left_frame)
-		self.weather.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
-		# news
-		self.news = News(self.bottom_frame)
-		self.news.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.YES)
-		self.news.headlines_label.config(justify=tk.RIGHT)
-		# alexa
-		self.alexa = Alexa(self.bottomRight_frame)
-		self.alexa.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
-		self.alexa.alexa_label.config(justify=tk.RIGHT)
-		# thunderboard
-		self.thunderboard = ThunderBoardSensor(self.rightMiddle_frame)
-		self.thunderboard.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
-		self.thunderboard.readings_label.config(justify=tk.RIGHT)
 		
 		# Gui is disabled by Default
 		self.GuiOff()
+		self.__HideNotifications()
 		self.root.mainloop()
+
+		
 		
 	
+		
+	def __HideNotifications(self):
+		if self.overlay_frame is not None:
+			self.overlay_frame.grid_forget()
+		self.root.after(7000, lambda: self.__HideNotifications())
 		
 		
 	def toggle_fullscreen(self, event=None):
@@ -569,68 +607,78 @@ class BuildGUI(threading.Thread):
 		''' Removes all frames from the screen, 
 			leaving it blank
 		'''
-		if self.left_frame is not None:
-			self.left_frame.grid_forget()
-		if self.bottom_frame is not None:
-			self.bottom_frame.grid_forget()
-		if self.right_frame is not None:
-			self.right_frame.grid_forget()
-		if self.bottomRight_frame is not None:
-			self.bottomRight_frame.grid_forget()
-		if self.rightMiddle_frame is not None:
-			self.rightMiddle_frame.grid_forget()
+		if self.weather_parent.winfo_ismapped():
+			self.weather_parent.grid_forget()
+		if self.news_parent.winfo_ismapped():
+			self.news_parent.grid_forget()
+		if self.clock_parent.winfo_ismapped():
+			self.clock_parent.grid_forget()
+		if self.thunderboard_parent.winfo_ismapped():
+			self.thunderboard_parent.grid_forget()
+		if self.alexa_parent.winfo_ismapped():
+			self.alexa_parent.grid_forget()
 		return "break"
 	
 	def ToggleWeather(self, event=None):
 		''' Turns on the Weather Frame
 		'''
-		self.left_frame.grid(row=0, columnspan = 2, sticky="nw")
+		if not self.weather_parent.winfo_ismapped():
+			self.weather_parent.grid(row=0, columnspan = 2, sticky="nw")
 		return "break"
 	
 	def ToggleClock(self, event=None):
 		''' Turns on the Clock frame
 		'''
-		self.right_frame.grid(row=0, column = 2, sticky="ne")
+		if not self.clock_parent.winfo_ismapped():
+			self.clock_parent.grid(row=0, column = 2, sticky="ne")
 		return "break"
 	
 	def ToggleNews(self, event=None):
 		''' Turns on the news frame
 		'''
-		self.bottom_frame.grid(row=2, column = 1, columnspan = 2, sticky="se")
+		if self.thunderboard_parent.winfo_ismapped():
+			self.thunderboard_parent.grid_forget()
+		self.news_parent.grid(row=2, column = 1, columnspan = 2, sticky="se")
 		return "break"
 		
-	def ToggleAlexa(self, event=None):
-		''' Turns on the Alexa frame
-		'''
-		self.bottomRight_frame.grid(row=2, column = 0, sticky="sw")
+
 	
 	def ToggleThunderBoard(self, event=None):
 		''' Turns Thunderboard frame on
 		'''
-		if self.bottom_frame is not None:
-			self.bottom_frame.grid_forget()
-		self.rightMiddle_frame.grid(row=2, column = 1, columnspan = 2, sticky="e")
+		if self.news_parent.winfo_ismapped():
+			self.news_parent.grid_forget()
+		self.thunderboard_parent.grid(row=2, column = 1, columnspan = 2, sticky="e")
 		
 	
 	def ToggleAll(self, event=None):
 		''' Turns all Frames on
 		'''
-		self.ToggleNews()
-		self.ToggleClock()
+		if self.news_parent.winfo_ismapped():
+			pass
+		elif self.thunderboard_parent.winfo_ismapped():
+			pass
+		else:
+			self.ToggleNews()
+			
+			
+		self.ToggleClock()	
 		self.ToggleWeather()
-		self.ToggleAlexa()
-		self.ToggleThunderBoard()
 		return "break"
+		
+	def SendNotification(self, _text, event=None):
+		self.notif.UpdateText(_text)
+		self.overlay_frame.grid(row=1, column=1, sticky='ns')
+		
 	
 		
-	def UpdateAlexa(self, _title, _text, _time):
+	def UpdateAlexa(self, _title, _text, _time, event=None):
 		''' Updates the text in Alexa Frame
 		'''
-		self.ToggleAlexa()
+		self.alexa_parent.grid(row=2, column = 0, sticky="sw")
 		self.alexa.GetText(_title, _text, _time)
 		
-	def UpdateThunderboard(self, _data):
-		self.ToggleThunderBoard()
+	def UpdateThunderboard(self, _data, event=None):
 		self.thunderboard.UpdateReadings(_data)
 		
 

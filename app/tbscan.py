@@ -19,15 +19,18 @@ class ThunderboardHandler(threading.Thread):
 		
 		# Setting Constants
 		self.MIN_TIME_BETWEEN_EVENTS = timedelta(seconds=5)
-		# Setting default event times
+		# Setting variables to use later
 		self.lastNotification = datetime.min
 		self.lastTempEvent = datetime.min
 		self.lastCO2Event = datetime.min
 		self.lastVOCEvent = datetime.min
+		self.lastCO2Reading = -1
+		self.lastTempReading = -1
+		self.deviceID = -1
 		
 		
 		self.CommandInterface = _interfaceCommand
-		self.deviceID = -1
+		
 		threading.Thread.__init__(self)
 		self.daemon = True
 		self.start()
@@ -65,10 +68,25 @@ class ThunderboardHandler(threading.Thread):
 					self.thunderboard = self.thunderboards[devices[0]]
 					self.deviceID = devices[0]
 					info = ("New Device found, ID: " + str(deviceID))
-				data = self.sensorLoop(self.thunderboard, deviceID)
-				data["info"] = info
-				
-				self.CommandInterface("updateBoard", data)
+				try:
+					data = self.sensorLoop(self.thunderboard, deviceID)
+					data["info"] = info
+					self.HandleCO2(data["co2"])
+					self.HandleTemperature(data["temperature"])
+					self.CommandInterface("updateBoard", data)
+				except (IOError, BTLEException):
+					data = dict()
+					data["info"] = "Broken Pipe"
+					data["temperature"] = ""
+					data["co2"] = ""
+					data["humidity"] = ""
+					data["ambientLight"] = ""
+					data["uvIndex"] = ""
+					data["voc"] = ""
+					data["sound"] = ""
+					data["pressure"] = ""
+					self.CommandInterface("updateBoard", data)
+					self.thunderboards = self.getThunderboards()
 			sleep(0.2)
 
 
@@ -78,22 +96,36 @@ class ThunderboardHandler(threading.Thread):
 
 	def HandleTemperature(self, reading):
 		if self.AllowHandling(datetime.now()):
-			if reading > 30:
-				pass
+			if reading >= 30 and self.lastTempReading < 30:
+				self.lastTempReading = reading
+				self.lastTempEvent = datetime.now()
+				self.lastNotification = datetime.now()
+				self.CommandInterface("notif", "Ambient Temperature above 30 celsius!")
 		
 	
 	def HandleCO2(self, reading):
 		if self.AllowHandling(datetime.now()):
-			if reading >= 1000 and reading < 2000:
-				if self.lastCO2Event + timedelta(minutes = 5) < datetime.now():
-					# call event
+			# Reading in normal levels after not normal
+			if reading < 1000 and self.lastCO2Reading > 1000:
+				self.lastCO2Reading = reading
+				self.lastNotification = datetime.now()
+				self.CommandInterface("notif", "CO2 levels are back to normal.")
+				# Reading back to normal
+			elif reading >= 1000 and reading < 2000:
+				if self.lastCO2Event + timedelta(minutes = 10) < datetime.now():
+					# Reading in not recommended range
 					self.lastNotification = datetime.now()
 					self.lastCO2Event = datetime.now()
+					self.lastCO2Reading = reading
+					self.CommandInterface("notif", "CO2 levels above recommended, open the windows.")
 			elif reading >= 2000:
 				if self.lastCO2Event + timedelta(minutes = 1) < datetime.now():
-					# critical event
+					self.CommandInterface("notif", "CO2 levels are critical, air the room immidiately!")
 					self.lastNotification = datetime.now()
 					self.lastCO2Event = datetime.now()
+					self.lastCO2Reading = reading
+			else:
+				pass
 
 
 
