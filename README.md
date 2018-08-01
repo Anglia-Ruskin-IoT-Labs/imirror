@@ -114,6 +114,3 @@ on, off, board-on, board-off, weather-on, weather-off, clock-on, clock-off, guid
 Returns json with {'response': 'Update OK'} if one of the commands were used.
 Returns json with {'Error' : 'Invalid Command'} if wrong argument was used.
 
-
-
-
