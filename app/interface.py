@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 from threading import Lock
 import locale
 import threading
-#from app.tbscan import getThunderboards
 
 from contextlib import contextmanager
 from requests import get
