@@ -425,8 +425,10 @@ class Alexa(tk.Frame):
 	""" Prints the sent textfields what are passed in.
 	"""
 		
-	def __init__(self, parent):
+	def __init__(self, parent, frameTtl):
 		""" Constructor """
+		# In seconds
+		self.ALEXA_VISIBLE = frameTtl
 		tk.Frame.__init__(self, parent, bg='black')
 		self.title = ''
 		self.alexa_label = tk.Label(self, text=self.title, \
@@ -452,7 +454,7 @@ class Alexa(tk.Frame):
 			older than 5 minutes.
 		'''
 		try:
-			if (self.lastMessage + timedelta(minutes = 5)) < datetime.now():
+			if (self.lastMessage + timedelta(minutes = self.ALEXA_VISIBLE)) < datetime.now():
 				self.text_label.config(text="")
 				self.alexa_label.config(text="")
 				self.loop = self.after(5000, self.IsTextOld)
@@ -472,10 +474,10 @@ class PopUp(tk.Frame):
 	def __init__(self, parent):
 		tk.Frame.__init__(self, parent, bg='black')
 		self.title = 'Notification'
-		self.alexa_label = tk.Label(self, text=self.title, \
+		self.title_label = tk.Label(self, text=self.title, \
 								   font=('Lato', MD_TEXT), \
 								   fg='white', bg='black')
-		self.alexa_label.pack(side=tk.TOP, anchor=tk.N)
+		self.title_label.pack(side=tk.TOP, anchor=tk.N)
 		self.text_label = tk.Label(self, text = '',
 								   font=('Lato', SM_TEXT),
 								   fg='white', bg='black')
@@ -487,7 +489,29 @@ class PopUp(tk.Frame):
 	def UpdateText(self, _text):
 		self.text_label.config(text = _text)
 		
-
+class Guide(tk.Frame):
+	'''Guide for beginners
+	'''
+	
+	def __init__(self, parent):
+		tk.Frame.__init__(self, parent, bg='black')
+		self.title = 'Guide'
+		self.guide = "To begin to interact with me,\n" + \
+	    "You can say 'Alexa, open iMirror from " + \
+	    "Anglia Ruskin' \nYou can also interact with " + \
+	    "Alexa as you normally would. \nThere are more skills " + \
+	    "to open, like: \n'BuzzBox from Anglia Ruskin', and \n" + \
+	    "'Zork from Anglia Ruskin'"
+		self.title_label = tk.Label(self, text=self.title, \
+								   font=('Lato', MD_TEXT), \
+								   fg='white', bg='black', justify = tk.LEFT)
+		self.title_label.pack(side=tk.TOP, anchor=tk.W)
+		self.text_label = tk.Label(self, text = self.guide,
+								   font=('Lato', SM_TEXT),
+								   fg='white', bg='black', justify = tk.LEFT)
+		self.text_label.pack(side=tk.TOP, anchor=tk.N)
+		
+		
 		
 
 class BuildGUI(threading.Thread):
@@ -496,12 +520,18 @@ class BuildGUI(threading.Thread):
 	draws the GUI and contains methods for toggling fullcreen
 	"""
 
-	"""
-	BuildGUI constructor
-	sets the configuration options for the GUI and builds it.
-	Self starts on a different thread.
-	"""
-	def __init__(self):
+	
+	
+	
+	def __init__(self, _alexa_ttl, _notif_ttl):
+		"""
+		BuildGUI constructor
+		sets the configuration options for the GUI and builds it.
+		Self starts on a different thread.
+		"""
+		self.NOTIF_VISIBLE = _notif_ttl
+		self.ALEXA_VISIBLE = _alexa_ttl
+		self.lastNotification = datetime.min
 		threading.Thread.__init__(self)
 		self.daemon = True
 		self.start()
@@ -524,7 +554,8 @@ class BuildGUI(threading.Thread):
 		self.alexa_parent = tk.Frame(self.root, background='black')
 		self.thunderboard_parent = tk.Frame(self.root, background='black')
 		self.overlay_frame = tk.Frame(self.root, background='black')
-
+		self.guide_frame = tk.Frame(self.root, background='black')
+		
 		# Creating the grid
 		self.root.grid_rowconfigure(1, weight=1)
 		self.root.grid_columnconfigure(1, weight=1)
@@ -544,17 +575,19 @@ class BuildGUI(threading.Thread):
 		self.news.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.YES)
 		self.news.headlines_label.config(justify=tk.RIGHT)
 		# alexa
-		self.alexa = Alexa(self.alexa_parent)
+		self.alexa = Alexa(self.alexa_parent, self.ALEXA_VISIBLE)
 		self.alexa.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
 		self.alexa.alexa_label.config(justify=tk.RIGHT)
 		# thunderboard
 		self.thunderboard = ThunderBoardSensor(self.thunderboard_parent)
 		self.thunderboard.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
 		self.thunderboard.readings_label.config(justify=tk.RIGHT)
-
 		# popup
 		self.notif = PopUp(self.overlay_frame)
 		self.notif.pack(side=tk.RIGHT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
+		# guide
+		self.guide = Guide(self.guide_frame)
+		self.guide.pack(side=tk.LEFT, padx=50, pady=50, fill=tk.NONE, expand=tk.NO)
 		
 		# Toggles between fot testing
 		self.root.bind("<Return>", self.toggle_fullscreen)
@@ -563,7 +596,7 @@ class BuildGUI(threading.Thread):
 		self.root.bind("2", self.ToggleWeather)
 		self.root.bind("3", self.ToggleClock)
 		self.root.bind("1", self.ToggleNews)
-		#self.root.bind("4", self.ToggleAlexa)
+		self.root.bind("4", self.ToggleGuide)
 		self.root.bind("5", self.ToggleThunderBoard)
 		self.root.bind("6", self.SendNotification)
 		self.root.bind("<Escape>", self.ToggleAll)
@@ -578,9 +611,10 @@ class BuildGUI(threading.Thread):
 	
 		
 	def __HideNotifications(self):
-		if self.overlay_frame is not None:
+		if self.overlay_frame.winfo_ismapped() and \
+			(self.lastNotification + timedelta(seconds = self.NOTIF_VISIBLE)) < datetime.now():
 			self.overlay_frame.grid_forget()
-		self.root.after(7000, lambda: self.__HideNotifications())
+		self.root.after(1000, lambda: self.__HideNotifications())
 		
 		
 	def toggle_fullscreen(self, event=None):
@@ -601,7 +635,14 @@ class BuildGUI(threading.Thread):
 		self.state = False
 		self.root.attributes("-fullscreen", False)
 		return "break"
-	
+		
+
+	def ToggleGuide(self, event=None):
+		if self.alexa_parent.winfo_ismapped():
+			self.alexa_parent.grid_forget()
+		self.guide_frame.grid(row=2, column = 0, sticky="sw")
+		return "break"
+		
 	def GuiOff(self, event=None):
 		''' Removes all frames from the screen, 
 			leaving it blank
@@ -616,6 +657,8 @@ class BuildGUI(threading.Thread):
 			self.thunderboard_parent.grid_forget()
 		if self.alexa_parent.winfo_ismapped():
 			self.alexa_parent.grid_forget()
+		if self.guide_frame.winfo_ismapped():
+			self.guide_frame.grid_forget()
 		return "break"
 	
 	def ToggleWeather(self, event=None):
@@ -668,12 +711,15 @@ class BuildGUI(threading.Thread):
 	def SendNotification(self, _text, event=None):
 		self.notif.UpdateText(_text)
 		self.overlay_frame.grid(row=1, column=1, sticky='ns')
+		self.lastNotification = datetime.now()
 		
 	
 		
 	def UpdateAlexa(self, _title, _text, _time, event=None):
 		''' Updates the text in Alexa Frame
 		'''
+		if self.guide_frame.winfo_ismapped():
+			self.guide_frame.grid_forget()
 		self.alexa_parent.grid(row=2, column = 0, sticky="sw")
 		self.alexa.GetText(_title, _text, _time)
 		

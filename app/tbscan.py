@@ -5,6 +5,7 @@ from time import sleep
 from tbsense import Thunderboard
 import threading
 from datetime import datetime, timedelta
+import pyglet
 
 
 
@@ -15,10 +16,13 @@ class ThunderboardHandler(threading.Thread):
 	'''
 	def __init__(self, _interfaceCommand):
 		''' Constructor
-		'''
-		
+		'''	
 		# Setting Constants
-		self.MIN_TIME_BETWEEN_EVENTS = timedelta(seconds=5)
+		self.MIN_TIME_BETWEEN_EVENTS = timedelta(seconds=10)
+		self.TEMP_UPPER_THRESHOLD = 30
+		self.CO2_BAD_THRESHOLD = 1000
+		self.CO2_CRITICAL_THRESHOLD = 2000
+		
 		# Setting variables to use later
 		self.lastNotification = datetime.min
 		self.lastTempEvent = datetime.min
@@ -27,6 +31,8 @@ class ThunderboardHandler(threading.Thread):
 		self.lastCO2Reading = -1
 		self.lastTempReading = -1
 		self.deviceID = -1
+		self.whiteSounds = []
+		self.synthetizedSpeech = []
 		
 		
 		self.CommandInterface = _interfaceCommand
@@ -76,7 +82,7 @@ class ThunderboardHandler(threading.Thread):
 					self.CommandInterface("updateBoard", data)
 				except (IOError, BTLEException):
 					data = dict()
-					data["info"] = "Broken Pipe"
+					data["info"] = "Connection Error"
 					data["temperature"] = ""
 					data["co2"] = ""
 					data["humidity"] = ""
@@ -101,6 +107,10 @@ class ThunderboardHandler(threading.Thread):
 				self.lastTempEvent = datetime.now()
 				self.lastNotification = datetime.now()
 				self.CommandInterface("notif", "Ambient Temperature above 30 celsius!")
+				
+				#song = pyglet.media.load('thesong.ogg')
+				#song.play()
+				#pyglet.app.run()
 		
 	
 	def HandleCO2(self, reading):

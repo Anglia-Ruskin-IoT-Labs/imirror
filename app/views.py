@@ -3,10 +3,20 @@ from flask import jsonify, request
 import json
 import requests
 from datetime import datetime
-import timer as countdown
+from timer import Timer
 import interface
 import PIRBoot
 from tbscan import ThunderboardHandler
+
+#
+# CONSTANTS
+#
+
+
+MIRROR_TTL = 60 	# in seconds
+ALEXA_FRAME_TTL = 1	# in minutes
+NOTIF_TTL = 10		# in seconds
+
 
 #GUI_Control:Interface
 def ChangeGUI(command, data):
@@ -18,9 +28,12 @@ def ChangeGUI(command, data):
 		gui.UpdateThunderboard(data)
 	elif (command == "notif"):
 		gui.SendNotification(data)
+	elif (command == "guide"):
+		gui.ToggleGuide()
 
-gui = interface.BuildGUI()
-motionSensor = PIRBoot.SensorService(ChangeGUI)
+timer = Timer(MIRROR_TTL)
+gui = interface.BuildGUI(ALEXA_FRAME_TTL, NOTIF_TTL)
+motionSensor = PIRBoot.SensorService(ChangeGUI, timer)
 thunderboard = ThunderboardHandler(ChangeGUI)
 
 
@@ -36,7 +49,6 @@ def blank():
 def alexaResponse():
 	json = request.get_json()
 	gui.UpdateAlexa(json["title"], json["text"], datetime.now())
-	countdown.RestartTimer()
 	return jsonify({'response' : 'Update Ok'}) #to use with Dict
 
 #
@@ -47,51 +59,51 @@ def changeUI():
 	command = request.args.get('command')
 	if command == "on":
 		gui.ToggleAll()
-		countdown.RestartTimer()
+		timer.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command =="off":
 		gui.GuiOff()
-		countdown.RestartTimer()
+		timer.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "board-on":
 		gui.ToggleThunderBoard()
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "board-off":
 
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "weather-on":
 		gui.ToggleWeather()
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "weather-off":
 
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "clock-on":
 		gui.ToggleClock()
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "clock-off":
 
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "news-on":
 		gui.ToggleNews()
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "news-off":
 
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "guide-on":
-
-		countdown.RestartTimer()
+		gui.ToggleGuide()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	elif command == "guide-off":
 
-		countdown.RestartTimer()
+		time.RestartTimer()
 		return jsonify({'response' : 'Update Ok'})
 	else:
 		return jsonify({'Error' : 'Invalid command'})
