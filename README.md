@@ -38,11 +38,11 @@ Clone the repo:
 ```bash
 cd /home/pi && git clone https://github.com/Floyd0122/skill-server-imirror.git
 ```
-prevent any Compiling errors:
+Prevent any Compiling errors:
 ```bash
 sudo apt-get install build-essential libssl-dev libffi-dev python-dev libglib2.0-dev
 ```
-install required packages:
+Install required packages:
 ```bash
 sudo apt-get install python python-imaging-tk
 ```
@@ -69,8 +69,14 @@ WEATHER_API_TOKEN = '[TOKEN]' # replace with secret key provided at https://dark
 ## Set up autostart
 Add these lines to ~/.config/lxsession/LXDE/autostart to run things at startup
 ```bash
-@lxterminal -e /home/pi/SkillServer/run.py #$HOME doesnt work
+@lxterminal -e sudo /home/pi/skill-server-imirror/run.py #$HOME doesnt work
 ```
+
+## Generate SSL Keys
+```bash
+openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365
+```
+Copy the results into the /home/pi/skill-server-imirror/certs/ folder.
 
 Put the motion sensor in the correct PINs
 ```
@@ -80,9 +86,31 @@ GPIO 5V [Pin 2]
 GPIO 7 [Pin 26]
 ```
 
-#Running
-Just restart and it will work
+## Running
+Just restart the pi and it will work
+Alternatively you can run it with this command:
+```bash
+sudo /home/pi/skill-server-imirror/run.py
+```
+
+# Docs
+## Server
+
+Listening over HTTPS on Port: 5005
+
+### POST endpoint '/alexa'
+Updates Interface with alexa's last response.
 
 
+Required payload is json with 'title' and 'text' fields. Example: {'title' : 'Buzzbox', 'text' : 'turn everything on'}'
+Returns {'response' : 'Update Ok'} if payload was parsed correctly
 
+### GET endpoint '/toggle?command='
+Responsible of changing the interface modules. Command is required, list of them:
+
+on, off, board-on, board-off, weather-on, weather-off, clock-on, clock-off, guide-on-guide-off
+
+
+Returns json with {'response': 'Update OK'} if one of the commands were used.
+Returns json with {'Error' : 'Invalid Command'} if wrong argument was used.
 
