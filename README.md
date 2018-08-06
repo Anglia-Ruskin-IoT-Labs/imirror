@@ -5,6 +5,8 @@ It displays weather, news and time, and also displays amazon alexa textfielfds
 
 Motion sensor is implemented.
 
+For actual Voice Control [Alexa-Voice-sdk](https://github.com/Floyd0122/avs-device-sdk) repo needs to be installed to a spearate (or the same) device.
+
 
 ## Basic Setup of Raspberry Pi from fresh install for iMirror and its server:
 
