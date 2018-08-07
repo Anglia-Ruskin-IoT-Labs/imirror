@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from bluepy.btle import *
 import struct
-from time import sleep
+import time
 from tbsense import Thunderboard
 import threading
 from datetime import datetime, timedelta
@@ -48,39 +48,32 @@ class ThunderboardHandler(threading.Thread):
 	def run(self):
 		''' Runs when the thread starts
 		'''
-		self.thunderboards = self.getThunderboards()
+		self.thunderboards = self.CollectBoards()
+		isBoardActive = False
 		while True:
 			message = ""
 			info = ""
 			if len(self.thunderboards) == 0:
+				time.sleep(1)
 				info = ("No Thunderboard Sense devices found!")
-				self.thunderboards = self.getThunderboards()
+				self.thunderboards = self.CollectBoards()
 			else:
-				# Preparing variables
-				isBoardActive = False
 				devices = list()
 				# iterating through available boards
 				for deviceID, thunderboard in self.thunderboards.items():
-					# board is the Previously used board, selected
-					if deviceID == self.deviceID:
-						self.thunderboard == thunderboard
-						isBoardActive = True
-					# board is a different board, appending its id
-					else:
-						devices.append(deviceID)
-				# Previously used board was not found
-				if not isBoardActive:
-					# Selecting first available board
-					self.thunderboard = self.thunderboards[devices[0]]
-					self.deviceID = devices[0]
-					info = ("New Device found, ID: " + str(deviceID))
+					devices.append(deviceID)
+				# Selecting first available board
+				self.thunderboard = self.thunderboards[devices[0]]
+				self.deviceID = devices[0]
+				info = ("Device ID: " + str(deviceID))
 				try:
 					data = self.sensorLoop(self.thunderboard, deviceID)
 					data["info"] = info
 					self.HandleCO2(data["co2"])
 					self.HandleTemperature(data["temperature"])
 					self.CommandInterface("updateBoard", data)
-				except (IOError, BTLEException):
+				except (IOError, BTLEException) as e:
+					print ("sensorloop error: " + str(e))
 					data = dict()
 					data["info"] = "Connection Error"
 					data["temperature"] = ""
@@ -92,8 +85,8 @@ class ThunderboardHandler(threading.Thread):
 					data["sound"] = ""
 					data["pressure"] = ""
 					self.CommandInterface("updateBoard", data)
-					self.thunderboards = self.getThunderboards()
-			sleep(0.2)
+					self.thunderboards = self.CollectBoards()
+			time.sleep(0.2)
 
 
 #-----------------------------------------------------------------
@@ -145,6 +138,14 @@ class ThunderboardHandler(threading.Thread):
 #------------------------------------------------
 # Assist Methods
 # -----------------------------------------------  
+	def CollectBoards(self):
+		try:
+			return self.getThunderboards()
+		except Exception as e:
+			print(e)
+			time.sleep(1)
+			self.CollectBoards()
+
 	def AllowHandling(self, time):
 		if (self.lastNotification + self.MIN_TIME_BETWEEN_EVENTS) < time:
 			return True
@@ -184,42 +185,38 @@ class ThunderboardHandler(threading.Thread):
 		text += '\n' + tb.name + '\n'
 		data = dict()
 
-		try:
+		for key in tb.char.keys():
+			if key == 'temperature':
+				data['temperature'] = tb.readTemperature()
+				text += 'Temperature:\t{} C\n'.format(data['temperature'])
+			elif key == 'humidity':
+				data['humidity'] = tb.readHumidity()
+				text += 'Humidity:\t{} %RH\n'.format(data['humidity'])
+			
+			elif key == 'ambientLight':
+				data['ambientLight'] = tb.readAmbientLight()
+				text += 'Ambient Light:\t{} Lux\n'.format(data['ambientLight'])
 
-			for key in tb.char.keys():
-				if key == 'temperature':
-					data['temperature'] = tb.readTemperature()
-					text += 'Temperature:\t{} C\n'.format(data['temperature'])
-				elif key == 'humidity':
-					data['humidity'] = tb.readHumidity()
-					text += 'Humidity:\t{} %RH\n'.format(data['humidity'])
-				
-				elif key == 'ambientLight':
-					data['ambientLight'] = tb.readAmbientLight()
-					text += 'Ambient Light:\t{} Lux\n'.format(data['ambientLight'])
+			elif key == 'uvIndex':
+				data['uvIndex'] = tb.readUvIndex()
+				text += 'UV Index:\t{}\n'.format(data['uvIndex'])
 
-				elif key == 'uvIndex':
-					data['uvIndex'] = tb.readUvIndex()
-					text += 'UV Index:\t{}\n'.format(data['uvIndex'])
+			elif key == 'co2' and tb.coinCell == False:
+				data['co2'] = tb.readCo2()
+				text += 'eCO2:\t\t{}\n'.format(data['co2'])
 
-				elif key == 'co2' and tb.coinCell == False:
-					data['co2'] = tb.readCo2()
-					text += 'eCO2:\t\t{}\n'.format(data['co2'])
+			elif key == 'voc' and tb.coinCell == False:
+				data['voc'] = tb.readVoc()
+				text += 'tVOC:\t\t{}\n'.format(data['voc'])
 
-				elif key == 'voc' and tb.coinCell == False:
-					data['voc'] = tb.readVoc()
-					text += 'tVOC:\t\t{}\n'.format(data['voc'])
+			elif key == 'sound':
+				data['sound'] = tb.readSound()
+				text += 'Sound Level:\t{}\n'.format(data['sound'])
 
-				elif key == 'sound':
-					data['sound'] = tb.readSound()
-					text += 'Sound Level:\t{}\n'.format(data['sound'])
+			elif key == 'pressure':
+				data['pressure'] = tb.readPressure()
+				text += 'Pressure:\t{}\n'.format(data['pressure'])
 
-				elif key == 'pressure':
-					data['pressure'] = tb.readPressure()
-					text += 'Pressure:\t{}\n'.format(data['pressure'])
-
-		except Exception, e:
-			print(e)
 
 		return data
 
