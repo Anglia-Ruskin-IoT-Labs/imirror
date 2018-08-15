@@ -1,51 +1,21 @@
-from app import server
+from server import flask
 from flask import jsonify, request
 import json
 import requests
 from datetime import datetime
-from timer import Timer
-import interface
-import PIRBoot
-from tbscan import ThunderboardHandler
 
 #
 # CONSTANTS
 #
 
 
-MIRROR_TTL = 60 	# in seconds
-ALEXA_FRAME_TTL = 1	# in minutes
-NOTIF_TTL = 10		# in seconds
-
-
-#GUI_Control:Interface
-def ChangeGUI(command, data):
-	if (command == "showAll"):
-		gui.ToggleAll()
-	elif (command == "hideAll"):
-		gui.GuiOff()
-	elif (command == "updateBoard"):
-		gui.UpdateThunderboard(data)
-	elif (command == "notif"):
-		gui.SendNotification(data)
-	elif (command == "guide"):
-		gui.ToggleGuide()
-
-timer = Timer(MIRROR_TTL)
-gui = interface.BuildGUI(ALEXA_FRAME_TTL, NOTIF_TTL)
-motionSensor = PIRBoot.SensorService(ChangeGUI, timer)
-thunderboard = ThunderboardHandler(ChangeGUI)
-
-
-
-
 
 #WebServer routing
-@server.route('/')
+@flask.route('/')
 def blank():
 	return "Hello"
 
-@server.route('/alexa', methods = ['POST'])
+@flask.route('/alexa', methods = ['POST'])
 def alexaResponse():
 	json = request.get_json()
 	gui.UpdateAlexa(json["title"], json["text"], datetime.now())
@@ -54,7 +24,7 @@ def alexaResponse():
 #
 # TODO
 #
-@server.route('/toggle', methods = ['GET'])
+@flask.route('/toggle', methods = ['GET'])
 def changeUI():
 	command = request.args.get('command')
 	if command == "on":

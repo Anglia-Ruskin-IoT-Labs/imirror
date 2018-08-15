@@ -46,7 +46,7 @@ sudo apt-get install build-essential libssl-dev libffi-dev python-dev libglib2.0
 ```
 Install required packages:
 ```bash
-sudo apt-get install python python-imaging-tk
+sudo apt-get install python3 python3-pil.imagetk
 ```
 
 
@@ -55,7 +55,7 @@ Install script dependencies:
 due to some pip errors recently we're usng explicit install (20/07/18)
 
 ```bash
-cd skill-server-imirror && sudo python -m pip install -r requirements.txt
+cd skill-server-imirror && sudo pip3 install -r requirements.txt
 ```
 
 ## Get API keys:

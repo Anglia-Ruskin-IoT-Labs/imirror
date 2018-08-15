@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from bluepy.btle import *
 import struct
 from time import sleep

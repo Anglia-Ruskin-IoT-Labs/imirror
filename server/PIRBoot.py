@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import RPi.GPIO as GPIO
 import time
 import threading
@@ -18,9 +18,9 @@ class SensorService(threading.Thread):
 		self.countdown = countdown
 		self.MirrorSelfStarted = False
 	def run(self):
-		print "PIR Module Startup script (CTRL+C to exit)"
+		print('PIR Module Startup script (CTRL+C to exit)')
 		time.sleep(15)
-		print "Ready"
+		print("Ready")
 		try:
 			while True:
 				# Screen is off and Movement is sensed
@@ -29,13 +29,6 @@ class SensorService(threading.Thread):
 					self.parent_method("showAll", "") 
 					self.parent_method("guide", "")
 					self.MirrorSelfStarted = True
-				# Turns modules on if user walks to mirror after 
-				# he/she used alexa to control mirror
-				#elif GPIO.input(PIR_PIN) and self.countdown.ReadTimer() > 1 \
-					#and not self.MirrorSelfStarted:
-					#self.parent_method("showAll", "") 
-					#self.MirrorSelfStarted = True
-					#self.countdown.RestartTimer()
 				# Screen is on and movement is sensed                 
 				elif GPIO.input(PIR_PIN) and self.countdown.ReadTimer() > 1:
 					self.countdown.RestartTimer()
@@ -55,12 +48,5 @@ class SensorService(threading.Thread):
 				time.sleep(0.5)
 				
 		except KeyboardInterrupt:
-			print'Quit'
+			print('Quit')
 
-		
-#SensorService()
-#while True:
-#    time.sleep(1)
-#    pass
-
-####

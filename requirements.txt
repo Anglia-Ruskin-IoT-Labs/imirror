@@ -3,3 +3,5 @@ requests
 feedparser
 pillow
 bluepy
+pyglet
+configparser
