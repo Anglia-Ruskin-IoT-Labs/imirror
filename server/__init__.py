@@ -1,29 +1,24 @@
 from flask import Flask
 from timer import Timer
-from config import Config
-
-
+import config
 
 #GUI_Control:Interface
 def ChangeGUI(command : str, data):
 	if (command == "showAll"):
-		gui.ToggleAll()
+		gui.GuiOn()
 	elif (command == "hideAll"):
 		gui.GuiOff()
 	elif (command == "updateBoard"):
 		gui.UpdateThunderboard(data)
 	elif (command == "notif"):
 		gui.SendNotification(data)
-	elif (command == "guide"):
-		gui.ToggleGuide()
 
 
 # ------------------------------------------------
 # Initialising global dependencies
 # ------------------------------------------------
-configuration = Config()
 flask = Flask(__name__)
-timer = Timer(configuration.MirrorTTL)
+timer = Timer(config.MirrorTTL)
 
 # ------------------------------------------------
 # Importing and initializing modules
@@ -31,11 +26,10 @@ timer = Timer(configuration.MirrorTTL)
 import server.interface as interface
 import server.PIRBoot as PIRBoot
 from server.tbscan import ThunderboardHandler
-from server import views
 
 motionSensor = PIRBoot.SensorService(ChangeGUI, timer) # MotionSensor starts after 15 seconds
-gui = interface.BuildGUI(configuration.AlexaTTL, configuration.NotifTTL) # Interface starts
+gui = interface.BuildGUI(config.AlexaTTL, config.NotifTTL) # Interface starts
 thunderboard = ThunderboardHandler(ChangeGUI)
 
-
+from server import views
 # Appflow goes back to run.py

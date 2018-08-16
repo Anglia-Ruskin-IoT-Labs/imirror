@@ -4,8 +4,7 @@ SmartMirror.py
 A python program to output data for use with a smartmirror.
 It fetches weather, news, and time information.
 """
-
-from traceback import print_exc
+from traceback import print_exc			# installed modules
 from json import loads
 from time import strftime
 import time
@@ -14,65 +13,53 @@ from threading import Lock
 import locale
 import threading
 import pathlib
-from server import configuration as cfg
-
 from contextlib import contextmanager
 from requests import get
 from feedparser import parse
 import PIL.Image, PIL.ImageTk
+from tkinter import *					# Recommended way for tkinter
 
-ROWS = 3
-COLUMNS = 3
-# ----------------------------------
-# Position objects for a 3/3 grid
-# ----------------------------------
+from server.gui_positions import Pos	# custom modules
+import config as cfg
 
-
-
-
-# try/except to use correct Tkinter library depending on device.
-try:
-	from mttkinter import mtTkinter as tk
-except ImportError:
-	from tkinter import *
+# --------------------------------------------------------
+# Constants
+# --------------------------------------------------------
 
 ### Darksky API weather constants ###
-# replace with secret key provided at https://darksky.net/dev/account/
-WEATHER_API_TOKEN = '443a029b56964c639cb8f6da87415c20'
-### IpStack Location API token
-LOCATION_API_TOKEN = '66c1f2e2627bb5299404ddfbe5ff5185'
 # For full lust of language and unit paramaeters see:
 # https://darksky.net/dev/docs/forecast
+#
+# Replace with secret key provided at https://darksky.net/dev/account/
+WEATHER_API_TOKEN = '443a029b56964c639cb8f6da87415c20'
+
+### IpStack Location API token
+# replace with key provided on https://ipstack.com/dashboard
+LOCATION_API_TOKEN = '66c1f2e2627bb5299404ddfbe5ff5185'
 WEATHER_LANG = 'en'
 WEATHER_UNIT = 'uk2'
 ICON_DIR = "icons/"
-# maps
-
-
 
 ICON_LOOKUP = {
-	'clear-day': ICON_DIR + "sun.png",  # Clear Sky
-	'wind': ICON_DIR + "wind.png",  # Wind
-	'cloudy': ICON_DIR + "cloud.png",  # Cloudy day
-	'partly-cloudy-day': ICON_DIR + "sun-cloud.png",  # Partial clouds
-	'rain': ICON_DIR + "rain.png",  # Rain
-	'snow': ICON_DIR + "snow.png",  # Snow
-	'snow-thin': ICON_DIR + "snow.png",  # Sleet
-	'fog': ICON_DIR + "fog.png",  # Fog
-	'clear-night': ICON_DIR + "moon.png",  # Clear night
-	'partly-cloudy-night': ICON_DIR + "moon-cloud.png",  # Partial clouds night
-	'thunderstorm': ICON_DIR + "lightning.png",  # Storm
-	'tornado': ICON_DIR + "tornado.png",  # tornado
-	'hail': ICON_DIR + "hail.png"  # hail
+	'clear-day': ICON_DIR + "sun.png",  			# Clear Sky
+	'wind': ICON_DIR + "wind.png", 					# Wind
+	'cloudy': ICON_DIR + "cloud.png",  				# Cloudy day
+	'partly-cloudy-day': ICON_DIR + "sun-cloud.png",# Partial clouds
+	'rain': ICON_DIR + "rain.png",  				# Rain
+	'snow': ICON_DIR + "snow.png",  				# Snow
+	'snow-thin': ICON_DIR + "snow.png", 			# Sleet
+	'fog': ICON_DIR + "fog.png",  					# Fog
+	'clear-night': ICON_DIR + "moon.png", 			# Clear night
+	'partly-cloudy-night': ICON_DIR + "moon-cloud.png",# Partial clouds night
+	'thunderstorm': ICON_DIR + "lightning.png",  	# Storm
+	'tornado': ICON_DIR + "tornado.png",  			# tornado
+	'hail': ICON_DIR + "hail.png"  					# hail
 }
 ### Locale and time constants ###
 LOCALE_LOCK = Lock()
-# set to your own locale. Use locale -a to list installed locales
-UI_LOCALE = 'en_GB.utf-8'
-# leave blank for 24h time format
-TIME_FORMAT = None
-# check python doc for strftime() for more date formatting options
-DATE_FORMAT = "%b %d, %Y"
+UI_LOCALE = 'en_GB.utf-8'							# set to your own locale. Use locale -a to list installed locales
+TIME_FORMAT = None									# leave blank for 24h time format
+DATE_FORMAT = "%b %d, %Y"							# check python doc for strftime() for more date formatting options
 
 ### Tkinter formatting constants ###
 XL_TEXT = 94
@@ -81,14 +68,10 @@ MD_TEXT = 28
 SM_TEXT = 18
 XS_TEXT = 12
 
-
 @contextmanager
 def setlocale(name):
-	"""
-	setlocale class
-	used to set the locale using system locale for accurate time information.
-	"""
-
+	"""	used to set the locale using system locale for 
+	accurate time information.	"""
 	with LOCALE_LOCK:
 		saved = locale.setlocale(locale.LC_ALL)
 		try:
@@ -96,25 +79,17 @@ def setlocale(name):
 		finally:
 			locale.setlocale(locale.LC_ALL, saved)
 
-
+# --------------------------------------------------------
+# Widgets
+# --------------------------------------------------------
 class Weather(Frame):
-	"""
-	Weather class
-	This class contains methods that fetch weather information.
+	"""	This class contains methods that fetch weather information.
 	Weather information is based upon location.
-	Location is determined using the device's IP address.
-	"""
-
-
+	Location is determined using the device's IP address. """
 	def __init__(self, parent):
-		"""
-		Weather constructor.
-		Stores weather information.
-		"""
-
+		"""Constructor, Stores weather information."""
 		Frame.__init__(self, parent, bg='black')
-		# data storage variables
-		self.temperature = ''
+		self.temperature = ''										# data storage variables
 		self.forecast = ''
 		self.location = ''
 		self.latitude = ''
@@ -122,79 +97,51 @@ class Weather(Frame):
 		self.currently = ''
 		self.icon = ''
 		
-		# store own grid settings
-		self.POS = cfg.WeatherPOS
-
-		# tkinter settings
-		self.degree_frame = Frame(self, bg="black")
+		self.degree_frame = Frame(self, bg="black")					# tkinter settings
 		self.degree_frame.pack(side=TOP, anchor=W)
-
 		self.temperature_label = Label(self.degree_frame, \
-										  font=('Lato', XL_TEXT), \
-										  fg='white', bg="black")
+			 font=('Lato', XL_TEXT),fg='white', bg="black")
 		self.temperature_label.pack(side=LEFT, anchor=N)
-
 		self.icon_label = Label(self.degree_frame, bg="black")
 		self.icon_label.pack(side=LEFT, anchor=N, padx=20, pady=25)
-
 		self.currently_label = Label(self, font=('Lato', MD_TEXT), \
-										fg="white", bg="black")
+			fg="white", bg="black")
 		self.currently_label.pack(side=TOP, anchor=W)
-
 		self.forecast_label = Label(self, font=('Lato', SM_TEXT), \
-									   fg='white', bg='black', wraplength = 700, justify=LEFT)
+			fg='white', bg='black', wraplength = 700, justify=LEFT)
 		self.forecast_label.pack(side=TOP, anchor=W)
-
 		self.location_label = Label(self, font=('Lato', SM_TEXT), \
-									   fg="white", bg="black")
+			fg="white", bg="black")
 		self.location_label.pack(side=TOP, anchor=W)
 
-		self.get_location()
+		self.get_location()											#running methods
 		self.get_weather()
 
 
 	def get_location(self):
-		"""
-		get_location
-		Method to fetch device location based upon IP address.
-		"""
-
+		"""	Method to fetch device location based upon IP address. """
 		try:
 			### Fetch location using freegeoip API ###
 			# store location URL. Uses IP fetched by get_ip() in variable
 			location_req_url = ("http://api.ipstack.com/" + str(self.get_ip()) +
 								"?access_key=" + LOCATION_API_TOKEN + "&output=json&legacy=1")
-			# fetch data from URL in location_req_url and store in variable
-			req = get(location_req_url)
-			# convert fetched data to python object and store in variable
-			location_obj = loads(req.text)
-
-			# change latitude variable if device has moved.
-			if self.latitude != location_obj['latitude']:
+			req = get(location_req_url)							# fetch data from URL
+			location_obj = loads(req.text)						# convert fetched data to object
+			if self.latitude != location_obj['latitude']:		# change latitude variable if device has moved.
 				self.latitude = location_obj['latitude']
-				# change latitude variable if device has moved.
-				if self.longitude != location_obj['longitude']:
-					self.longitude = location_obj['longitude']
-
-			# get current location and store in tmp variable
+			if self.longitude != location_obj['longitude']:		# change latitude variable if device has moved.
+				self.longitude = location_obj['longitude']
 			location_tmp = "%s, %s" % \
-					(location_obj['city'], location_obj['region_code'])
-
-			# update weather information
-			if self.location != location_tmp:
+					(location_obj['city'], location_obj['region_code']) # get current location and store in tmp variable
+			if self.location != location_tmp:					# update weather information
 				self.location = location_tmp
 				self.location_label.config(text=location_tmp)
-
 		except Exception as exc:
 			print_exc()
 			return "Error: %s. Cannot get location." % exc
 
 	def get_weather(self):
-		"""
-		get_weather
-		Method that fetches weather information
-		"""
-
+		"""	Method that fetches weather information """
 		try:
 			### Get weather information using Darksky API ###
 			# store the darksky API URL in variable
@@ -202,51 +149,32 @@ class Weather(Frame):
 				"https://api.darksky.net/forecast/%s/%s,%s?lang=%s&units=%s" \
 				% (WEATHER_API_TOKEN, self.latitude, self.longitude,\
 				   WEATHER_LANG, WEATHER_UNIT)
-			# fetch data from URL in weather_req_url and store in a variable
-			req = get(weather_req_url)
-			# convert fetched data to puthon object and store in variable
-			weather_obj = loads(req.text)
-
+			req = get(weather_req_url) 								# fetch data from URL
+			weather_obj = loads(req.text) 							# convert fetched data to object
 			### Assign weather information to variables ###
-			# store unicode degree character in variable
 			degree_sign = u'\N{DEGREE SIGN}'
-			# get current temperature and store in tmp variable
 			temperature_tmp = "%s%s" % \
 					(str(int(weather_obj['currently']['temperature'])), \
-					 degree_sign)
-			# get current weather summary and store in tmp variable
-			currently_tmp = weather_obj['currently']['summary']
-			# get the forecast summary and store it in tmp variable
-			forecast_tmp = weather_obj['hourly']['summary']
-			# get the ID of the icon and store in variable
-			icon_id = weather_obj['currently']['icon']
+					 degree_sign)									# Current temperature
+			currently_tmp = weather_obj['currently']['summary'] 	# Current Weather
+			forecast_tmp = weather_obj['hourly']['summary']			# Frorecast
+			icon_id = weather_obj['currently']['icon']				# Weather icon id
 			icon_tmp = None
-
-			# fetch weather icon informaton stored in weather_obj
-			if icon_id in ICON_LOOKUP:
+			if icon_id in ICON_LOOKUP:								# weather icon lookup
 				icon_tmp = ICON_LOOKUP[icon_id]
 
 			if icon_tmp is not None:
-				if self.icon != icon_tmp:
-					# set self.icon to the new icon
-					self.icon = icon_tmp
-					# open the image file
-					image = PIL.Image.open(pathlib.Path(icon_tmp))
-					# resize the image and antialias
-					image = image.resize((100, 100), PIL.Image.ANTIALIAS)
+				if self.icon != icon_tmp:														
+					self.icon = icon_tmp							# set self.icon to the new icon
+					image = PIL.Image.open(pathlib.Path(icon_tmp))	# open the image file
+					image = image.resize((100, 100), PIL.Image.ANTIALIAS)# resize the image and antialias
 					image = image.convert('RGB')
-					# convert image to tkinter object and store in variable
-					photo = PIL.ImageTk.PhotoImage(image)
-
-					# apply settings to self.icon_label
-					self.icon_label.config(image=photo)
+					photo = PIL.ImageTk.PhotoImage(image)			# convert image to tkinter object and store in variable
+					self.icon_label.config(image=photo)				# apply settings to self.icon_label
 					self.icon_label.image = photo
-			else:
-				# remove image
+			else:	# remove image
 				self.icon_label.config(image='')
-
-			# update weather information
-			if self.currently != currently_tmp:
+			if self.currently != currently_tmp:						# update all weather information
 				self.currently = currently_tmp
 				self.currently_label.config(text=currently_tmp)
 			if self.forecast != forecast_tmp:
@@ -255,33 +183,22 @@ class Weather(Frame):
 			if self.temperature != temperature_tmp:
 				self.temperature = temperature_tmp
 				self.temperature_label.config(text=temperature_tmp)
-
 		except Exception as exc:
 			print_exc()
 			print("Error %s. Cannot get weather." % exc)
-
 		self.after(300000, self.get_weather)
 
 
 	@staticmethod
 	def get_ip():
-		"""
-		get_ip
-		gets the IP address of the device and returns it
-		"""
-
+		"""	gets the IP address of the device and returns it """
 		try:
 			### Fetch IP address using IPify API ###
 			# store ipify API URL in variable
 			ip_url = "https://api.ipify.org?format=json"
-			# fetch data from URL in ip_url and store in variable
-			req = get(ip_url)
-			# convert fetched data to python object and store in variable
-			ip_obj = loads(req.text)
-
-			# return value stored in 'ip' JSON attribute
-			return ip_obj['ip']
-
+			req = get(ip_url)							# fetch data from URL
+			ip_obj = loads(req.text)					# convert fetched data to object
+			return ip_obj['ip']							# return value
 		except Exception as exc:
 			print_exc()
 			return "Error: %s. Cannot get IP." % exc
@@ -293,16 +210,11 @@ class Clock(Frame):
 	Outputs date and time info to tkinter GUI.
 	"""
 	def __init__(self, parent):
-		"""
-		Clock constructor
-		Stores time information and tkinter configuration options.
-		"""
-
+		"""	Clock constructor, Stores time information and tkinter 
+		configuration options. """
 		self.time = ''
 		self.day = ''
 		self.date = ''
-		
-		self.POS = cfg.ClockPOS
 
 		Frame.__init__(self, parent, bg='black')
 		self.time_label = Label(self, font=('Lato', LG_TEXT),\
@@ -319,11 +231,8 @@ class Clock(Frame):
 		self.update_time()
 
 	def update_time(self):
-		"""
-		update_time method
-		updates the time using system locale.
-		"""
-
+		"""	update_time method
+		updates the time using system locale."""
 		with setlocale(UI_LOCALE):
 			if TIME_FORMAT == 12:
 				time_tmp = strftime('%I:%M %p')
@@ -351,15 +260,8 @@ class News(Frame):
 	News class
 	Fetches news from BBC RSS feed and outputs top 5 headlines.
 	"""
-
-
 	def __init__(self, parent):
-		"""
-		News contructor
-		stores headline data for News object
-		"""
-		self.POS = cfg.NewsPOS
-
+		"""	contructor, stores headline data for News object """
 		Frame.__init__(self, parent)
 		self.config(bg='black')
 		self.title = 'News'
@@ -374,11 +276,7 @@ class News(Frame):
 		self.get_news()
 
 	def get_news(self):
-		"""
-		get_news class
-		fetches XML data from the BBC using feedparser
-		"""
-
+		"""	fetches XML data from the BBC using feedparser """
 		try:
 			# reset headline info in headline_container
 			self.headlines_label.config(text="")
@@ -400,21 +298,15 @@ class News(Frame):
 			# join the contents of headlines into
 			headlines_tmp = '\n'.join(headlines)
 			self.headlines_label.config(text=headlines_tmp)
-
 		except Exception as exc:
 			print_exc()
 			print("Error %s. Cannot get news." % exc)
-
 		self.after(300000, self.get_news)
 		
 class ThunderBoardSensor(Frame):
-	""" Displays all sensors reading on the thunderbird
-	"""	
-	
+	""" Displays all sensors reading on the thunderbird"""
 	def __init__(self, parent):
 		'''Constructor'''
-			
-		self.POS = cfg.SensorPOS
 		Frame.__init__(self, parent, bg='black')
 		self.title = 'Thunderboard sensors'
 		self.title_label = Label(self, text=self.title, \
@@ -426,8 +318,6 @@ class ThunderBoardSensor(Frame):
 								   fg='white', bg='black', wraplength = 500, justify = LEFT)
 		self.readings_label.pack(side=TOP, anchor=E)
 
-								  
-	
 	def UpdateReadings(self, data):
 		message = (str(data["info"]) + "\n" + 
 					"Temperature: " + str(data["temperature"]) + "\n" + 
@@ -443,17 +333,11 @@ class ThunderBoardSensor(Frame):
 			
 
 class Alexa(Frame):
-	""" Prints the sent textfields what are passed in.
-	"""
-		
+	""" Prints the sent textfields what are passed in."""
 	def __init__(self, parent, frameTtl):
-		""" Constructor """
-		
-		self.POS = cfg.AlexaPOS
-		
+		""" Constructor """		
 		self.ALEXA_VISIBLE = frameTtl # in seconds
-		Frame.__init__(self, parent, bg='black')
-		
+		Frame.__init__(self, parent, bg='black')		
 		self.title = ''
 		self.alexa_label = Label(self, text=self.title, \
 								   font=('Lato', MD_TEXT), \
@@ -464,8 +348,7 @@ class Alexa(Frame):
 								   fg='white', bg='black', wraplength = 500, justify = LEFT)
 		self.text_label.pack(side=TOP, anchor=N)
 		self.IsTextOld()
-	
-		
+			
 	def GetText(self, _title, _text, _time):
 		''' Changes Alexa frames text and updates 
 		'''
@@ -475,10 +358,9 @@ class Alexa(Frame):
 		
 	def IsTextOld(self):
 		''' Deletes All text from alexa frame if the last message is
-			older than 5 minutes.
-		'''
+			older than 5 minutes. '''
 		try:
-			if (self.lastMessage + timedelta(minutes = self.ALEXA_VISIBLE)) < datetime.now():
+			if (self.lastMessage + timedelta(seconds = self.ALEXA_VISIBLE)) < datetime.now():
 				self.text_label.config(text="")
 				self.alexa_label.config(text="")
 				self.loop = self.after(5000, self.IsTextOld)
@@ -493,12 +375,9 @@ class Alexa(Frame):
 			
 class PopUp(Frame):
 	''' Label that destroys itself after 5 seconds
-	'''
-	
+	'''	
 	def __init__(self, parent):
 		Frame.__init__(self, parent, bg='black')
-		
-		self.POS = cfg.NotifPOS
 		
 		self.title = 'Notification'
 		self.title_label = Label(self, text=self.title, \
@@ -510,26 +389,21 @@ class PopUp(Frame):
 								   fg='white', bg='black', width = 200, 
 								   wraplength = 200)
 		self.text_label.pack(side=TOP, anchor=N)
-		
-		
-		
-		
+			
 	def UpdateText(self, _text):
 		self.text_label.config(text = _text)
 		
 class Guide(Frame):
 	'''Guide for beginners
 	'''
-	
 	def __init__(self, parent):
-		self.POS = cfg.GuidePOS
 		Frame.__init__(self, parent, bg='black')
 		self.title = 'Guide'
-		self.guide = "To begin to interact with me,\n" + \
-	    "You can say 'Alexa, open iMirror from " + \
-	    "Anglia Ruskin' \nYou can also interact with " + \
-	    "Alexa as you normally would. \nThere are more skills " + \
-	    "to open, like: \n'BuzzBox from Anglia Ruskin', and \n" + \
+		self.guide = "To begin to interact with me " + \
+	    "you can say 'Alexa, open iMirror from " + \
+	    "Anglia Ruskin'. You can also interact with " + \
+	    "Alexa as you normally would. There are more skills " + \
+	    "to open, like: 'BuzzBox from Anglia Ruskin', and " + \
 	    "'Zork from Anglia Ruskin'"
 		self.title_label = Label(self, text=self.title, \
 								   font=('Lato', MD_TEXT), \
@@ -537,21 +411,19 @@ class Guide(Frame):
 		self.title_label.pack(side=TOP, anchor=W)
 		self.text_label = Label(self, text = self.guide,
 								   font=('Lato', SM_TEXT),
-								   fg='white', bg='black', justify = LEFT)
+								   fg='white', bg='black', justify = LEFT,
+								   wraplength = 500)
 		self.text_label.pack(side=TOP, anchor=N)
 		
 		
-		
-
+# --------------------------------------------------------
+# Tkinter Main Window
+# --------------------------------------------------------	
 class BuildGUI(threading.Thread):
 	"""
 	BuildGUI class
 	draws the GUI and contains methods for toggling fullcreen
 	"""
-
-	
-	
-	
 	def __init__(self, _alexa_ttl: int, _notif_ttl: int):
 		"""
 		BuildGUI constructor
@@ -583,92 +455,96 @@ class BuildGUI(threading.Thread):
 		self.root.grid_columnconfigure(1, weight=0, minsize = 360)
 		self.root.grid_columnconfigure(2, weight=1, minsize = 360)
 		self.root.grid_columnconfigure(3, weight=0, minsize = 360)
-	
-		
-	
-		
+
 		# ---------------------------------------------------
 		# Creating Frames
 		# ---------------------------------------------------
 		
 		# clock
-		self.clock_parent = Frame(self.root, background='black')
+		self.clock_parent = Frame(self.root, name = cfg.CLOCK_NAME, background='black')
 		self.clock = Clock(self.clock_parent)
 		self.clock.pack(side=RIGHT, padx=50, pady=50, fill=NONE, expand=NO)
 		# weather
-		self.weather_parent = Frame(self.root, background='black')
+		self.weather_parent = Frame(self.root, name = cfg.WEATHER_NAME, background='black')
 		self.weather = Weather(self.weather_parent)
 		self.weather.pack(side=LEFT, padx=50, pady=50, fill=NONE, expand=NO)
 		# news
-		self.news_parent = Frame(self.root, background='black')
+		self.news_parent = Frame(self.root, name = cfg.NEWS_NAME, background='black')
 		self.news = News(self.news_parent)
 		self.news.pack(side=RIGHT, padx=50, pady=50, fill=NONE, expand=NO)
 		self.news.headlines_label.config(justify=RIGHT)
 		# alexa
-		self.alexa_parent = Frame(self.root, background='black')
+		self.alexa_parent = Frame(self.root, name = cfg.ALEXA_NAME, background='black')
 		self.alexa = Alexa(self.alexa_parent, self.ALEXA_VISIBLE)
 		self.alexa.pack(side=LEFT, padx=50, pady=50, fill=NONE, expand=NO)
 		self.alexa.alexa_label.config(justify=RIGHT)
 		# thunderboard
-		self.thunderboard_parent = Frame(self.root, background='black')
+		self.thunderboard_parent = Frame(self.root, name = cfg.SENSORS_NAME, background='black')
 		self.thunderboard = ThunderBoardSensor(self.thunderboard_parent)
 		self.thunderboard.pack(side=RIGHT, padx=50, pady=50, fill=NONE, expand=NO)
 		self.thunderboard.readings_label.config(justify=RIGHT)
 		# Notification Overlay
-		self.overlay_frame = Frame(self.root, background='black')
+		self.overlay_frame = Frame(self.root, name = cfg.NOTIF_NAME, background='black')
 		self.notif = PopUp(self.overlay_frame)
 		self.notif.pack(side=RIGHT, padx=50, pady=50, fill=NONE, expand=NO)
 		# guide
-		self.guide_frame = Frame(self.root, background='black')
+		self.guide_frame = Frame(self.root, name = cfg.GUIDE_NAME, background='black')
 		self.guide = Guide(self.guide_frame)
 		self.guide.pack(side=LEFT, padx=50, pady=50, fill=NONE, expand=NO)
-		
-		
+
+		# Module Mappings
+		self.frames = {
+			cfg.ALEXA_NAME: self.alexa_parent,
+			cfg.NOTIF_NAME: self.overlay_frame,
+			cfg.CLOCK_NAME: self.clock_parent,
+			cfg.NEWS_NAME: self.news_parent,
+			cfg.WEATHER_NAME: self.weather_parent,
+			cfg.GUIDE_NAME: self.guide_frame,
+			cfg.SENSORS_NAME: self.thunderboard_parent
+		}
+				
 		# ------------------------------------------------------
 		# Keybindings for testing
 		# -----------------------------------------------------
 		self.root.bind("<Return>", self.toggle_fullscreen)
 		self.root.bind("<Escape>", self.end_fullscreen)
 		self.root.bind("<Up>", self.GuiOff)
-		self.root.bind("2", self.ToggleWeather)
-		self.root.bind("3", self.ToggleClock)
-		self.root.bind("1", self.ToggleNews)
-		self.root.bind("4", self.ToggleGuide)
-		self.root.bind("5", self.ToggleThunderBoard)
+		self.root.bind("2", lambda event, a="news": 
+                            self.ToggleFrame(a))
+		self.root.bind("3", lambda event, a="clock": 
+                            self.ToggleFrame(a))
+		self.root.bind("1", lambda event, a="weather": 
+                            self.ToggleFrame(a))
+		self.root.bind("4", lambda event, a="guide": 
+                            self.ToggleFrame(a))
+		self.root.bind("5", lambda event, a="sensors": 
+                            self.ToggleFrame(a))
 		self.root.bind("6", self.SendNotification)
-		self.root.bind("<Escape>", self.ToggleAll)
+		self.root.bind("7", self.GuiOff)
+		self.root.bind("8", self.GuiOn)
+		self.root.bind("<Escape>", self.GuiOn)
 		
 		# Gui is disabled by Default
 		self.GuiOff()
 		self.__HideNotifications()
 		self.root.mainloop()
-
-		
-		
 	
-		
 	def __HideNotifications(self):
+		''' Hides notifications after a given time 
+		specified in config '''
 		if self.overlay_frame.winfo_ismapped() and \
 			(self.lastNotification + timedelta(seconds = self.NOTIF_VISIBLE)) < datetime.now():
 			self.overlay_frame.grid_forget()
-		self.root.after(1000, lambda: self.__HideNotifications())
-		
+		self.root.after(1000, lambda: self.__HideNotifications())	
 		
 	def toggle_fullscreen(self, event=None):
-		"""
-		toggle_fullscreen method
-		toggles the GUI's fullscreen state when user presses return
-		"""
-
+		""" toggles the GUI's fullscreen state when user presses return	"""
 		self.state = not self.state
 		self.root.attributes("-fullscreen", self.state)
 		return "break"
 
 	def end_fullscreen(self, event=None):
-		"""
-		end_fullscreen method
-		ends the GUI's fullscreen state when user presses escape.
-		"""
+		""" ends the GUI's fullscreen state when user presses escape. """
 		self.state = False
 		self.root.attributes("-fullscreen", False)
 		return "break"
@@ -676,107 +552,129 @@ class BuildGUI(threading.Thread):
 # ---------------------------------------------------
 # User Callable Methods
 # ---------------------------------------------------
-	def ToggleGuide(self, event=None):
-		if self.alexa_parent.winfo_ismapped():
-			self.alexa_parent.grid_forget()
-		self.guide_frame.grid(row = self.guide.POS.row, 
-							  column = self.guide.POS.column, 
-							  sticky = self.guide.POS.alignment)
-		return "break"
-		
-	def GuiOff(self, event=None):
-		''' Removes all frames from the screen, 
-			leaving it blank
-		'''
-		if self.weather_parent.winfo_ismapped():
-			self.weather_parent.grid_forget()
-		if self.news_parent.winfo_ismapped():
-			self.news_parent.grid_forget()
-		if self.clock_parent.winfo_ismapped():
-			self.clock_parent.grid_forget()
-		if self.thunderboard_parent.winfo_ismapped():
-			self.thunderboard_parent.grid_forget()
-		if self.alexa_parent.winfo_ismapped():
-			self.alexa_parent.grid_forget()
-		if self.guide_frame.winfo_ismapped():
-			self.guide_frame.grid_forget()
-		return "break"
-	
-	def ToggleWeather(self, event=None):
-		''' Turns on the Weather Frame
-		'''
-		if not self.weather_parent.winfo_ismapped():
-			self.weather_parent.grid(row = self.weather.POS.row, 
-							         column = self.weather.POS.column, 
-								     sticky = self.weather.POS.alignment)
-		return "break"
-	
-	def ToggleClock(self, event=None):
-		''' Turns on the Clock frame
-		'''
-		if not self.clock_parent.winfo_ismapped():
-			self.clock_parent.grid(row = self.clock.POS.row, 
-							       column = self.clock.POS.column, 
-								   sticky = self.clock.POS.alignment)
-		return "break"
-	
-	def ToggleNews(self, event=None):
-		''' Turns on the news frame
-		'''
-		if self.thunderboard_parent.winfo_ismapped():
-			self.thunderboard_parent.grid_forget()
-		self.news_parent.grid(row = self.news.POS.row, 
-							  column = self.news.POS.column, 
-							  sticky = self.news.POS.alignment)
-		return "break"
-		
-	def ToggleThunderBoard(self, event=None):
-		''' Turns Thunderboard frame on
-		'''
-		if self.news_parent.winfo_ismapped():
-			self.news_parent.grid_forget()
-		self.thunderboard_parent.grid(row = self.thunderboard.POS.row, 
-							         column = self.thunderboard.POS.column, 
-								     sticky = self.thunderboard.POS.alignment)
-		
-	
-	def ToggleAll(self, event=None):
-		''' Turns all Frames on
-		'''
-		if self.news_parent.winfo_ismapped():
-			pass
-		elif self.thunderboard_parent.winfo_ismapped():
-			pass
+	def ShowFrame(self, _frame: str) -> bool:
+		'''Same as ToggleFrame, but with weight
+		increment (user action happened)'''
+		if self.ToggleFrame(_frame):
+			value = cfg.frameWeights.get(_frame)
+			value += 1
+			cfg.frameWeights[_frame] = value
+			return True
 		else:
-			self.ToggleNews()		
-		self.ToggleClock()	
-		self.ToggleWeather()
-		return "break"
-		
-	def SendNotification(self, _text, event=None):
-		self.notif.UpdateText(_text)
-		self.overlay_frame.grid(row = self.notif.POS.row, 
-							    column = self.notif.POS.column, 
-								sticky = self.notif.POS.alignment)
-		self.lastNotification = datetime.now()
+			return False
+
+	def HideFrame(self, _frame: str) -> bool:
+		'''Hides and decrements weighting by 1'''
+		try:	
+			self.frames[_frame].grid_forget()
+			value = cfg.frameWeights.get(_frame)
+			value -= 1
+			cfg.frameWeights[_frame] = value
+			return True
+		except Exception as e:
+			print_exc()
+			print("Cant turn GUI off, Error: " + str(e))
+			return False
+
+
+	def GuiOff(self, event=None) -> bool:
+		""" Removes all widgets from the screen """
+		try:
+			frames = list(self.root.winfo_children())
+			for frame in frames:
+				frame.grid_forget()
+			return True
+		except Exception as e:
+			print_exc()
+			print("Cant turn GUI off, Error: " + str(e))
+			return False
+
+	def GuiOn(self, event=None):
+		''' Turns preferred Widgets on.
+		If there are more widgets for the same space, 
+		Uses the most asked for one.'''
+		try:
+			positions = dict()
+			# Collects widgets positions, exlucdes ALEXA_NAME and NOTIF_NAME
+			for name, position in cfg.framePositions.items():  
+				if str(name) == cfg.ALEXA_NAME or str(name) == cfg.NOTIF_NAME: 	# Exceptions
+					pass
+				elif str(position) in positions: # Existing position, append
+					temp = positions.get(str(position))
+					temp.append(name)
+					positions[str(position)] = temp
+				else:
+					positions[str(position)] = [str(name)] # New position
+			# Selects most asked for widget for each position		
+			for position, names in positions.items():
+				widgetWeights = dict()
+				for name in names:
+					widgetWeights[str(name)] = cfg.frameWeights[name]
+				highestWidget = max(widgetWeights, key=widgetWeights.get)
+				self.ToggleFrame(highestWidget)
+			return True
+		except Exception as e:
+			print_exc()
+			print("GuiOn failed with errors, Error: " + str(e))
+			return False
+
+	def ChangeFramePosition(self, _frame: str, _position: Pos) -> bool:
+		"""Changes a Widget saved Position and saves it to the mappings
+		   and config."""
+		try:
+			frame = self.frames.get(_frame)
+			cfg.framePositions[_frame] = _position
+			if frame.winfo_ismapped():
+				self.ToggleFrame(_frame)
+			return True
+		except Exception as e:
+			print_exc()
+			print("Cant turn GUI off, Error: " + str(e))
+			return False
 
 # ----------------------------------------------
 # Machine Callable Methods
-# ----------------------------------------------		
+# ----------------------------------------------
+
+	def ToggleFrame(self, _frame: str) -> bool:
+		"""Turns a passed in widget on, hiding everything what was on the
+		   same position."""
+		try:
+			frame = self.frames.get(_frame)
+			#----------------------------------------------------
+			# Hide modules visible at the same position
+			for name, position in cfg.framePositions.items():   
+				if position == cfg.framePositions[frame.winfo_name()]:
+					if self.frames[name].winfo_ismapped():
+						self.frames[name].grid_forget()
+			#----------------------------------------------------
+			# Show given frame
+			frame.grid(
+				row = cfg.framePositions[frame.winfo_name()].value.row, 
+				column = cfg.framePositions[frame.winfo_name()].value.column, 
+				sticky = cfg.framePositions[frame.winfo_name()].value.alignment)
+			return True
+		except Exception as e:
+			print_exc()
+			print("Can't turn widget on, Error: " + str(e))
+			return False
+		
+	def SendNotification(self, _text, event=None):
+		self.notif.UpdateText(_text)
+		self.ToggleFrame(cfg.NOTIF_NAME)
+		self.lastNotification = datetime.now()
+		
 	def UpdateAlexa(self, _title, _text, _time, event=None):
 		''' Updates the text in Alexa Frame
 		'''
 		if self.guide_frame.winfo_ismapped():
 			self.guide_frame.grid_forget()
-		self.alexa_parent.grid(row = self.alexa.POS.row, 
-							   column = self.alexa.POS.column, 
-							   sticky = self.alexa.POS.alignment)
+		self.ToggleFrame(cfg.ALEXA_NAME)
 		self.alexa.GetText(_title, _text, _time)
 		
 	def UpdateThunderboard(self, _data, event=None):
 		self.thunderboard.UpdateReadings(_data)
-		
-
+	
 # Self Init
 #def run():
 #	WINDOW = BuildGUI()

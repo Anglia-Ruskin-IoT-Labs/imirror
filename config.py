@@ -1,104 +1,113 @@
 import configparser
 from enum import Enum
+import atexit
+import server.gui_positions as gp
+from datetime import datetime
 
-class Pos(Enum):
-	TOPLEFT = 0
-	TOPMID = 1
-	TOPRIGHT = 2
-	MIDLEFT = 3
-	MID = 4
-	MIDRIGHT = 5
-	BOTLEFT = 6
-	BOTMID = 7
-	BOTRIGHT = 8
 
-class Position():
-	def __init__(self, _col: int, _row: int, _align: str, _pos: Pos):
-		self.column = _col
-		self.row = _row
-		self.alignment = _align
-		self.frame = None
-		self.representation = _pos
+confFile = 'config.cfg'
+## --------------------------------------------------------------
+## Widget names, these can be called through 
+## interface.ToggleFrame("name")
+## --------------------------------------------------------------
+ALEXA_NAME = 'alexa'
+CLOCK_NAME = 'clock'
+NEWS_NAME = 'news'
+WEATHER_NAME = 'weather'
+SENSORS_NAME = 'sensors'
+NOTIF_NAME = 'notif'
+GUIDE_NAME = 'guide'
+
+#-----------------------------------
+# DEFAULTS
+#-----------------------------------
+
+framePositions = {
+	GUIDE_NAME : gp.Pos.BOTLEFT,
+	ALEXA_NAME : gp.Pos.BOTLEFT,
+	NOTIF_NAME : gp.Pos.MID,
+	WEATHER_NAME : gp.Pos.TOPLEFT,
+	CLOCK_NAME : gp.Pos.TOPRIGHT,
+	NEWS_NAME : gp.Pos.BOTRIGHT,
+	SENSORS_NAME : gp.Pos.BOTRIGHT
+}
+
+frameWeights = {
+	GUIDE_NAME : 1.2,
+	ALEXA_NAME : -1,
+	NOTIF_NAME : -1,
+	WEATHER_NAME : 1.5,
+	CLOCK_NAME : 1.4,
+	NEWS_NAME : 1.3,
+	SENSORS_NAME : 1.1
+}
+MirrorTTL = 60 #in seconds
+NotifTTL = 10
+AlexaTTL = 10
+config = configparser.ConfigParser()
+
+
+def main():		
+	try:
+		config.read(confFile)
+		# Assigning config to variables outside of function scope
+		global MirrorTTL
+		MirrorTTL = int(config['Mirror']['MirrorTTL'])
+		global NotifTTL
+		NotifTTL = int(config['Mirror']['NotifTTL'])
+		global AlexaTTL
+		AlexaTTL = int(config['Mirror']['AlexaTTL'])
+		framePositions[NEWS_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][NEWS_NAME].name))
+		framePositions[GUIDE_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][GUIDE_NAME].name))
+		framePositions[ALEXA_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][ALEXA_NAME].name))
+		framePositions[NOTIF_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][NOTIF_NAME].name))
+		framePositions[WEATHER_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][WEATHER_NAME].name))
+		framePositions[CLOCK_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][CLOCK_NAME].name))
+		framePositions[SENSORS_NAME] = gp.PositionResolver(str(config['WIDGET_POSITIONS'][SENSORS_NAME].name))
+		frameWeights[NEWS_NAME] = (float(config['WIDGET_WEIGHTS'][NEWS_NAME]))
+		frameWeights[GUIDE_NAME] = (float(config['WIDGET_WEIGHTS'][GUIDE_NAME]))
+		frameWeights[ALEXA_NAME] = (float(config['WIDGET_WEIGHTS'][ALEXA_NAME]))
+		frameWeights[NOTIF_NAME] = (float(config['WIDGET_WEIGHTS'][NOTIF_NAME]))
+		frameWeights[WEATHER_NAME] = (float(config['WIDGET_WEIGHTS'][WEATHER_NAME]))
+		frameWeights[CLOCK_NAME] = (float(config['WIDGET_WEIGHTS'][CLOCK_NAME]))
+		frameWeights[SENSORS_NAME] = (float(config['WIDGET_WEIGHTS'][SENSORS_NAME]))
+	except (IOError, KeyError):
+		print("Config not found.")
 		
-	def __repr__(self):
-		return str(self.representation)
-		
+
+def Write():
+	config['Mirror'] = {'MirrorTTL':MirrorTTL,
+							'NotifTTL':NotifTTL,
+							'AlexaTTL':AlexaTTL}
+	config.set("Mirror", "; TTL values are in seconds.", "")
+	config['WIDGET_POSITIONS'] = {
+							NEWS_NAME:framePositions[NEWS_NAME].name,
+							CLOCK_NAME:framePositions[CLOCK_NAME].name,
+							WEATHER_NAME:framePositions[WEATHER_NAME].name,
+							SENSORS_NAME:framePositions[SENSORS_NAME].name,
+							GUIDE_NAME:framePositions[GUIDE_NAME].name,
+							ALEXA_NAME:framePositions[ALEXA_NAME].name,
+							NOTIF_NAME:framePositions[NOTIF_NAME].name}
+	config.set('WIDGET_POSITIONS', "; Avaliable values are: TOPLEFT,TOPMID " +
+    	"TOPRIGHT, MIDLEFT, MID, MIDRIGHT \nBOTLEFT, BOTMID, BOTRIGHT", "")
+	config['WIDGET_WEIGHTS'] = frameWeights
+	with open(confFile, 'w') as configfile:
+		config.write(configfile)
 
 
 
-class Config():
-	def __init__(self):
-		# Pos object inits 
-		#
+#------------------------------------------------
+#
+#-------------------------------------------------
+def exit_handler():
+	Write()
 
-		self.TOPLEFT = Position(1, 1, "nw", Pos.TOPLEFT)
-		self.TOPMID = Position(2, 1, "n", Pos.TOPMID)
-		self.TOPRIGHT = Position(3, 1, "ne", Pos.TOPRIGHT)
-		self.MIDLEFT = Position(1, 2, "w", Pos.MIDLEFT)
-		self.MID = Position(2, 2, "ns", Pos.MID)
-		self.MIDRIGHT = Position(3, 2, "e", Pos.MIDRIGHT)
-		self.BOTLEFT = Position(1, 3, "sw", Pos.BOTLEFT)
-		self.BOTMID = Position(2, 3, "s", Pos.BOTMID)
-		self.BOTRIGHT = Position(3, 3, "se", Pos.BOTRIGHT)
-		self.MirrorTTL = 60
-		self.NotifTTL = 10
-		self.AlexaTTL = 1
-		self.NewsPOS = self.BOTRIGHT
-		self.ClockPOS = self.TOPRIGHT
-		self.WeatherPOS = self.TOPLEFT
-		self.SensorPOS = self.BOTRIGHT
-		self.GuidePOS = self.BOTLEFT
-		self.AlexaPOS = self.BOTLEFT
-		self.NotifPOS = self.MID
-		confFile = 'config.cfg'
-		try:
-			config = configparser.ConfigParser()
-			config.read(confFile)
-			self.MirrorTTL = int(config['Mirror']['MirrorTTL'])
-			self.NotifTTL = int(config['Mirror']['NotifTTL'])
-			self.AlexaTTL = int(config['Mirror']['AlexaTTL'])
-			self.NewsPOS = self.PositionResolver(str(config['Mirror']['NewsPOS']))
-			self.ClockPOS = self.PositionResolver(str(config['Mirror']['ClockPOS']))
-			self.WeatherPOS = self.PositionResolver(str(config['Mirror']['WeatherPOS']))
-			self.SensorPOS = self.PositionResolver(str(config['Mirror']['SensorPOS']))
-			self.GuidePOS = self.PositionResolver(str(config['Mirror']['GuidePOS']	))
-			self.AlexaPOS = self.PositionResolver(str(config['Mirror']['AlexaPOS']))
-			self.NotifPOS = self.PositionResolver(str(config['Mirror']['NotifPOS']	))
-		except (IOError, KeyError):
-			print("Config not found, using defaults.")
-			print(self.BOTRIGHT)
-			config = configparser.ConfigParser()
-			config['Mirror'] = {'MirrorTTL':self.MirrorTTL,
-								'NotifTTL':self.NotifTTL,
-								'AlexaTTL':self.AlexaTTL,
-								'NewsPOS':self.NewsPOS,
-								'ClockPOS':self.ClockPOS,
-								'WeatherPOS':self.WeatherPOS,
-								'SensorPOS':self.SensorPOS,
-								'GuidePOS':self.GuidePOS,
-								'AlexaPOS':self.AlexaPOS,
-								'NotifPOS':self.NotifPOS}
-			with open(confFile, 'w') as configfile:
-				config.write(configfile)
-				
-	def PositionResolver(self, _config: str) -> Position:
-		if _config == str(Pos.TOPLEFT):
-			return self.TOPLEFT
-		elif _config == str(Pos.TOPMID):
-			return self.TOPMID
-		elif _config == str(Pos.TOPRIGHT):
-			return self.TOPRIGHT
-		elif _config == str(Pos.MIDLEFT):
-			return self.MIDLEFT
-		elif _config == str(Pos.MID):
-			return self.MID
-		elif _config == str(Pos.MIDRIGHT):
-			return self.MIDRIGHT
-		elif _config == str(Pos.BOTLEFT):
-			return self.BOTLEFT
-		elif _config == str(Pos.BOTMID):
-			return self.BOTMID
-		elif _config == str(Pos.BOTRIGHT):
-			return self.BOTRIGHT
-		else:
-			return self.BOTRIGHT
+atexit.register(exit_handler)
+
+
+
+def __init__():
+	main()
+
+
+
