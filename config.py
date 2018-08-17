@@ -25,17 +25,22 @@ GUIDE_NAME = 'guide'
 framePositions = {
 	GUIDE_NAME : gp.Pos.BOTLEFT,
 	ALEXA_NAME : gp.Pos.BOTLEFT,
-	NOTIF_NAME : gp.Pos.MID,
+	NOTIF_NAME : gp.Pos.MIDMID,
 	WEATHER_NAME : gp.Pos.TOPLEFT,
 	CLOCK_NAME : gp.Pos.TOPRIGHT,
 	NEWS_NAME : gp.Pos.BOTRIGHT,
 	SENSORS_NAME : gp.Pos.BOTRIGHT
 }
 
+# Decimal values can be use to decide priority if
+# widgets are weighted the same. Users can't change decimals, only 
+# the whole values
+# 
+# Alexa and notification weightings are set
 frameWeights = {
 	GUIDE_NAME : 1.2,
-	ALEXA_NAME : -1,
-	NOTIF_NAME : -1,
+	ALEXA_NAME : 99999999.1, 	# Have precedence over anything but notif
+	NOTIF_NAME : 99999999.2,	# Have precedence over anything
 	WEATHER_NAME : 1.5,
 	CLOCK_NAME : 1.4,
 	NEWS_NAME : 1.3,

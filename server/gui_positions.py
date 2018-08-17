@@ -21,7 +21,7 @@ class Pos(Enum):
     TOPMID = Position(2, 1, "n", 'TOPMID')
     TOPRIGHT = Position(3, 1, "ne", 'TOPRIGHT')
     MIDLEFT = Position(1, 2, "w", 'MIDLEFT')
-    MID = Position(2, 2, "ns", 'MID')
+    MIDMID = Position(2, 2, "ns", 'MIDMID')
     MIDRIGHT = Position(3, 2, "e", 'MIDRIGHT')
     BOTLEFT = Position(1, 3, "sw", 'BOTLEFT')
     BOTMID = Position(2, 3, "s", 'BOTMID')
@@ -37,7 +37,7 @@ def PositionResolver( _config: str) -> Position:
 		return Pos.TOPRIGHT
 	elif _config == str(Pos.MIDLEFT.name):
 		return Pos.MIDLEFT
-	elif _config == str(Pos.MID.name):
+	elif _config == str(Pos.MIDMID.name):
 		return Pos.MID
 	elif _config == str(Pos.MIDRIGHT.name):
 		return Pos.MIDRIGHT
@@ -48,7 +48,7 @@ def PositionResolver( _config: str) -> Position:
 	elif _config == str(Pos.BOTRIGHT.name):
 		return Pos.BOTRIGHT
 	else:
-		return Pos.BOTRIGHT
+		return None
 
 
 

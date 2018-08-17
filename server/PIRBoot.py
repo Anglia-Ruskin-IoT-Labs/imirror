@@ -34,7 +34,7 @@ class SensorService(threading.Thread):
 					self.countdown.RestartTimer()
 				# No movement, Screen on
 				elif self.countdown.ReadTimer() > 1:
-					print(self.countdown.ReadTimer())
+					pass
 				# No movement, countdown at threshold, turning screen off
 				elif self.countdown.ReadTimer() == 1:
 					self.parent_method("hideAll", "")

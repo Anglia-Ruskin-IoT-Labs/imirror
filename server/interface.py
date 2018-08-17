@@ -347,7 +347,6 @@ class Alexa(Frame):
 								   font=('Lato', SM_TEXT),
 								   fg='white', bg='black', wraplength = 500, justify = LEFT)
 		self.text_label.pack(side=TOP, anchor=N)
-		self.IsTextOld()
 			
 	def GetText(self, _title, _text, _time):
 		''' Changes Alexa frames text and updates 
@@ -355,23 +354,6 @@ class Alexa(Frame):
 		self.text_label.config(text=_text)
 		self.alexa_label.config(text=_title)
 		self.lastMessage = _time
-		
-	def IsTextOld(self):
-		''' Deletes All text from alexa frame if the last message is
-			older than 5 minutes. '''
-		try:
-			if (self.lastMessage + timedelta(seconds = self.ALEXA_VISIBLE)) < datetime.now():
-				self.text_label.config(text="")
-				self.alexa_label.config(text="")
-				self.loop = self.after(5000, self.IsTextOld)
-				
-			else:
-				self.loop = self.after(5000, self.IsTextOld)
-				pass
-		# No Message is passed in yet
-		except AttributeError:
-			self.loop = self.after(5000, self.IsTextOld)
-			pass
 			
 class PopUp(Frame):
 	''' Label that destroys itself after 5 seconds
@@ -432,6 +414,9 @@ class BuildGUI(threading.Thread):
 		"""
 		self.NOTIF_VISIBLE = _notif_ttl
 		self.ALEXA_VISIBLE = _alexa_ttl
+		# Variables to store names of overwritten widgets
+		self.lastBeforeAlexa = None
+		self.lastBeforeNotif = None
 		self.lastNotification = datetime.min
 		threading.Thread.__init__(self)
 		self.daemon = True
@@ -522,7 +507,10 @@ class BuildGUI(threading.Thread):
 		self.root.bind("6", self.SendNotification)
 		self.root.bind("7", self.GuiOff)
 		self.root.bind("8", self.GuiOn)
+		self.root.bind("9", lambda event, a="alexa", b="test", c=datetime.now(): 
+                            self.UpdateAlexa(a, b, c))
 		self.root.bind("<Escape>", self.GuiOn)
+		
 		
 		# Gui is disabled by Default
 		self.GuiOff()
@@ -533,8 +521,18 @@ class BuildGUI(threading.Thread):
 		''' Hides notifications after a given time 
 		specified in config '''
 		if self.overlay_frame.winfo_ismapped() and \
-			(self.lastNotification + timedelta(seconds = self.NOTIF_VISIBLE)) < datetime.now():
+				(self.lastNotification + timedelta(seconds = self.NOTIF_VISIBLE)) < datetime.now():
 			self.overlay_frame.grid_forget()
+			if self.lastBeforeNotif is not None: # Bring the overwritten widget back
+				self.ToggleFrame(self.lastBeforeNotif)
+				self.lastBeforeNotif = None # Reset
+		if self.alexa_parent.winfo_ismapped() and \
+				(self.alexa.lastMessage + timedelta(seconds = self.ALEXA_VISIBLE)) < datetime.now():
+			self.alexa_parent.grid_forget()
+			print(self.alexa.lastMessage)
+			if self.lastBeforeAlexa is not None:
+				self.ToggleFrame(self.lastBeforeAlexa)
+				self.lastBeforeAlexa = None
 		self.root.after(1000, lambda: self.__HideNotifications())	
 		
 	def toggle_fullscreen(self, event=None):
@@ -622,10 +620,9 @@ class BuildGUI(threading.Thread):
 		"""Changes a Widget saved Position and saves it to the mappings
 		   and config."""
 		try:
-			frame = self.frames.get(_frame)
 			cfg.framePositions[_frame] = _position
-			if frame.winfo_ismapped():
-				self.ToggleFrame(_frame)
+			#if frame.winfo_ismapped():
+			self.ToggleFrame(_frame)
 			return True
 		except Exception as e:
 			print_exc()
@@ -660,6 +657,11 @@ class BuildGUI(threading.Thread):
 			return False
 		
 	def SendNotification(self, _text, event=None):
+		for name, position in cfg.framePositions.items():   
+			if position == cfg.framePositions[cfg.NOTIF_NAME]:
+				if self.frames[name].winfo_ismapped():
+					self.lastBeforeNotif = name # Important to bring back widget
+					self.frames[name].grid_forget() 
 		self.notif.UpdateText(_text)
 		self.ToggleFrame(cfg.NOTIF_NAME)
 		self.lastNotification = datetime.now()
@@ -667,10 +669,14 @@ class BuildGUI(threading.Thread):
 	def UpdateAlexa(self, _title, _text, _time, event=None):
 		''' Updates the text in Alexa Frame
 		'''
-		if self.guide_frame.winfo_ismapped():
-			self.guide_frame.grid_forget()
-		self.ToggleFrame(cfg.ALEXA_NAME)
+		# Hide modules visible at the same position
+		for name, position in cfg.framePositions.items():   
+			if position == cfg.framePositions[cfg.ALEXA_NAME]:
+				if self.frames[name].winfo_ismapped() and not name == cfg.ALEXA_NAME:
+					self.lastBeforeAlexa = name  # Important to bring back widget
+					self.frames[name].grid_forget()
 		self.alexa.GetText(_title, _text, _time)
+		self.ToggleFrame(cfg.ALEXA_NAME)
 		
 	def UpdateThunderboard(self, _data, event=None):
 		self.thunderboard.UpdateReadings(_data)

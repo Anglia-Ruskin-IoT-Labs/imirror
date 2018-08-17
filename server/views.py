@@ -12,20 +12,29 @@ import server.gui_positions as gp
 @flask.route('/')
 def blank():
 	return "Hello"
+	
 
+#---------------------------------------------------
+# Update alexa frame with text received
+#---------------------------------------------------
 @flask.route('/alexa', methods = ['POST'])
 def alexaResponse():
 	json = request.get_json()
 	gui.UpdateAlexa(json["title"], json["text"], datetime.now())
 	return jsonify({'response' : 'Update Ok'}) #to use with Dict
 
+#---------------------------------------------------
+# Moves Widgets around
+#---------------------------------------------------
 @flask.route('/move', methods = ['GET', 'POST'])
 def moveInterfaceItems():
 	if request.method == 'POST':
 		json = request.get_json()
 		try:
 			position = gp.PositionResolver(json['position'])
-			if gui.ChangeFramePosition(json["widget"], position ):
+			if position == None:
+				return jsonify({'Error': 'Nonexistent position'})
+			if gui.ChangeFramePosition(json["widget"], position):
 				return jsonify({'response' : 'Update Ok'})
 			else:
 				return jsonify({'Error': 'Wrong widget name'})
@@ -35,9 +44,9 @@ def moveInterfaceItems():
 		return ("Example json: {'widget': 'widgetname', " + 
 		" 'position': 'positionname'}")
 
-#
-# TODO
-#
+#---------------------------------------------------
+# Turns widgets on and off
+#---------------------------------------------------
 @flask.route('/toggle', methods = ['GET', 'POST'])
 def changeUI():
 	if request.method == 'POST':
