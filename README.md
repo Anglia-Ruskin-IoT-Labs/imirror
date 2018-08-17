@@ -1,11 +1,15 @@
 # skill-server-imirror
 
 It displays weather, news and time, and also displays amazon alexa textfielfds
- from cards accepting the payload from an endpoint.
+from cards accepting the payload from an endpoint.
 
-Motion sensor is implemented.
+Motion sensor activates mirror for 60 seconds.
 
-For actual Voice Control [Alexa-Voice-sdk](https://github.com/Floyd0122/avs-device-sdk) repo needs to be installed to a spearate (or the same) device.
+Capabilities to move and show/hide widgets are implemented, remembers positions and widget preferences.
+
+Thunderboard implemented, basic notifications implemented for temperature and CO2 levels
+
+For Voice Control implementation  [Alexa-Voice-sdk](https://github.com/Floyd0122/avs-device-sdk) repo needs to be installed to a device on the same network.
 
 
 ## Basic Setup of Raspberry Pi from fresh install for iMirror and its server:
@@ -52,15 +56,13 @@ sudo apt-get install python3 python3-pil.imagetk
 
 Install script dependencies:
 
-due to some pip errors recently we're usng explicit install (20/07/18)
-
 ```bash
 cd skill-server-imirror && sudo pip3 install -r requirements.txt
 ```
 
 ## Get API keys:
-Go to [IpStack](https://ipstack.com/signup/free) and sign up for a free account.
-Go to [darksky.net](https://darksky.net/dev/) and sign up for a developer account. 
+Go to [IpStack](https://ipstack.com/signup/free) and sign up for a free developer account.
+Go to [darksky.net](https://darksky.net/dev/) and sign up for a free developer account. 
 
 Edit **interface.py** and replace the contents of WEATHER_API_TOKEN with the secret key provided on [Darksky's account page](https://darksky.net/dev/account/).
 Edit **interface.py** and replace the contents of LOCATION_API_TOKEN with the secret key provided on [IpStack's account page](https://ipstack.com/quickstart/).
@@ -74,13 +76,18 @@ Add these lines to ~/.config/lxsession/LXDE/autostart to run things at startup
 @lxterminal -e sudo /home/pi/skill-server-imirror/run.py #$HOME doesnt work
 ```
 
+Alternatively, you can create it as a servic via systemd: [HowTo link](https://www.dexterindustries.com/howto/run-a-program-on-your-raspberry-pi-at-startup/)
+
 ## Generate SSL Keys
+
+We operate the webserver over https, at this time Flask's Werkzeug on the Pi doesn't generate sufficent keys to an ad-hoc SSL context, so we generate a pair on our own.
+
 ```bash
 openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365
 ```
 Copy the results into the /home/pi/skill-server-imirror/certs/ folder.
 
-Put the motion sensor in the correct PINs
+Connect the motion sensor ito the correct GPIO PINs
 ```
 PIR SENSOR
 GPIO GND [Pin 6]
@@ -89,16 +96,16 @@ GPIO 7 [Pin 26]
 ```
 
 ## Running
-Just restart the pi and it will work
+Just restart the pi and it will autostart in a terminal
 Alternatively you can run it with this command:
 ```bash
 sudo /home/pi/skill-server-imirror/run.py
 ```
 
 # Docs
-## Server
+## API endpoints
 
-Listening over HTTPS on Port: 5005
+By default istening over HTTPS on Port: 5005
 
 ### POST endpoint '/alexa'
 Updates Interface with alexa's last response.
@@ -107,12 +114,30 @@ Updates Interface with alexa's last response.
 Required payload is json with 'title' and 'text' fields. Example: {'title' : 'Buzzbox', 'text' : 'turn everything on'}'
 Returns {'response' : 'Update Ok'} if payload was parsed correctly
 
-### GET endpoint '/toggle?command='
-Responsible of changing the interface modules. Command is required, list of them:
+### POST endpoint '/toggle'
+Responsible of turning the interface modules on and off. Json Payload is is required, example:
 
-on, off, board-on, board-off, weather-on, weather-off, clock-on, clock-off, guide-on-guide-off
+{'widget' : 'widgetname', 'state': 'statename'}
 
+* widgets: alexa, clock, news, notif, weather, sensors, guide, all
+* states: on, off
 
 Returns json with {'response': 'Update OK'} if one of the commands were used.
-Returns json with {'Error' : 'Invalid Command'} if wrong argument was used.
+Returns json with {'Error' : '*Error Message*'} if wrong argument was used.
+
+### POST endpoint '/move'
+
+Responsible of moving the interface modules. Json Payload is is required, example:
+
+{'widget' : '*widgetname*', 'position': '*positionname*'}
+
+* widgets: alexa, clock, news, notif, weather, sensors, guide
+
+* positions: TOPLEFT, TOPRIGHT, TOPMID, MIDLEFT, MIDMID, MIDRIGHT, BOTLEFT, BOTMID, BOTRIGHT
+
+  Returns json with {'response': 'Update OK'} if one of the commands were used.
+
+  Returns json with {'Error' : '*Error Message*'} if wrong argument was used.
+
+
 
