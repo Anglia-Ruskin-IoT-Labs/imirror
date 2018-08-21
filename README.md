@@ -1,6 +1,6 @@
-# imirror
+# iMirror
 
-iMirror with a motion sensor and an API to control, and modify it
+**This is a smart mirror with a motion sensor and an API to control and customize its interface.**
 
 It displays weather, news and time, and also displays amazon alexa textfielfds
 from cards accepting the payload from an endpoint.
