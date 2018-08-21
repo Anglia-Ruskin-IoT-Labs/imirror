@@ -141,3 +141,25 @@ Responsible of moving the interface modules. Json Payload is is required, exampl
 
 
 
+## Folder Structure
+
+```
+/skill-server-imirror
+	run.py - Script for starting the webserver and the modules
+	config.py - Creates, loads and saves config
+	timer.py - a timer what stores the remaining time in a file, stops at 0
+	tbsense.py - support module for tbscan.py
+	font/ - fonts for the interface.py
+	icons/ - icons for the interface.py
+	server/
+		__init__.py - Runs when server modules is called, initializes various objects
+		gui_positions.py - stores enum of positions
+		PIRBoot.py - Infrared sensor script
+		tbscan.py - thunderboard discovery and sensor readings and their notifications
+		views.py - API endpoints
+		static/ - not used
+		templates/ - not used
+
+```
+
+​	
