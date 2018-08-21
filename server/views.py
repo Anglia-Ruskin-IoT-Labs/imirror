@@ -4,6 +4,7 @@ import json
 import requests
 from datetime import datetime
 import server.gui_positions as gp
+from server import timer
 
 
 
@@ -35,6 +36,7 @@ def moveInterfaceItems():
 			if position == None:
 				return jsonify({'Error': 'Nonexistent position'})
 			if gui.ChangeFramePosition(json["widget"], position):
+				timer.RestartTimer()
 				return jsonify({'response' : 'Update Ok'})
 			else:
 				return jsonify({'Error': 'Wrong widget name'})
@@ -57,23 +59,27 @@ def changeUI():
 			if state == 'on':
 				if widget == 'all':
 					if gui.GuiOn():
+						timer.RestartTimer()
 						return jsonify({'response' : 'Update Ok'})
 					else:
 						return jsonify({'Error': 'Update Failed on ToggleAll()'})
 				else:
 					if gui.ShowFrame(widget):
+						timer.RestartTimer()
 						return jsonify({'response' : 'Update Ok'})
 					else:
 						return jsonify({'Error': ('Update Failed on ' + widget)})
 			elif state == 'off':
 				if widget == 'all':
 					if gui.GuiOff():
+						timer.RestartTimer()
 						return jsonify({'response' : 'Update Ok'})
 					else:
 						return jsonify({'Error': 'Update Failed on GuiOff()'})
 				else:
 					pass
 					if gui.HideFrame(widget):
+						timer.RestartTimer()
 						return jsonify({'response' : 'Update Ok'})
 					else:
 						return jsonify({'Error': ('Update Failed on ' + widget)})
