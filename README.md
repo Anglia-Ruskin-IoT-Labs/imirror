@@ -1,4 +1,6 @@
-# skill-server-imirror
+# imirror
+
+iMirror with a motion sensor and an API to control, and modify it
 
 It displays weather, news and time, and also displays amazon alexa textfielfds
 from cards accepting the payload from an endpoint.
